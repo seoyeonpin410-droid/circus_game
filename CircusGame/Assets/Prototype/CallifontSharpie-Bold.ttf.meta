@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 3ec52ba016dc53744857dca0e9689b49
+guid: be917a64d7344ae44b227098ed03ac79
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - NanumGothic
+  - Callifont Sharpie
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0
