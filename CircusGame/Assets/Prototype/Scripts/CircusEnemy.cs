@@ -30,13 +30,17 @@ namespace CircusPrototype
         }
         void Update()
         {
-            if (!session || session.State != ShowState.Playing || dead) return;
-            var direction = session.Player.transform.position - transform.position;
-            direction.y = 0;
+            if (!session || !session.Player || session.State != ShowState.Playing || dead) return;
+
+            Vector3 direction = session.Player.transform.position - transform.position;
+
             if (!ranged && controller)
             {
-                var movement = direction.magnitude > meleeRange * .72f ? direction.normalized : Vector3.zero;
-                // Keep the crowd spread out rather than stacking on one point.
+                var moveDir = direction;
+                moveDir.y = 0;
+
+                var movement = moveDir.magnitude > meleeRange * .72f ? moveDir.normalized : Vector3.zero;
+
                 foreach (var other in session.Enemies)
                 {
                     if (!other || other == this) continue;
@@ -45,32 +49,51 @@ namespace CircusPrototype
                     if (away.sqrMagnitude > .001f && away.sqrMagnitude < 1.44f)
                         movement += away.normalized * (1.2f - away.magnitude);
                 }
+
                 if (controller.isGrounded && verticalSpeed < 0) verticalSpeed = -2;
                 verticalSpeed -= 20 * Time.deltaTime;
+
                 controller.Move((Vector3.ClampMagnitude(movement, 1) * moveSpeed
                     + Vector3.up * verticalSpeed) * Time.deltaTime);
+
                 direction = session.Player.transform.position - transform.position;
-                direction.y = 0;
             }
-            if (direction.sqrMagnitude > .001f) model.rotation = Quaternion.LookRotation(direction);
+
+            if (model && direction.sqrMagnitude > 0.0001f)
+            {
+                var lookDir = direction;
+                lookDir.y = 0;
+                if (lookDir.sqrMagnitude > 0.0001f)
+                {
+                    model.rotation = Quaternion.LookRotation(lookDir);
+                }
+            }
+
             bool canAttack = ranged || (direction.magnitude < meleeRange
                 && Mathf.Abs(session.Player.transform.position.y - transform.position.y) < 1.4f);
+
             if (warning)
             {
                 warning.enabled = canAttack && nextAttack - Time.time < .7f;
                 warning.SetPosition(0, transform.position + Vector3.up * .15f);
                 warning.SetPosition(1, session.Player.transform.position + Vector3.up * .15f);
             }
+
             if (!canAttack || Time.time < nextAttack) return;
             nextAttack = Time.time + attackInterval;
+
             if (ranged)
             {
                 var origin = transform.position + Vector3.up * 1.1f;
                 var shot = Instantiate(projectile, origin, Quaternion.identity);
                 shot.Launch((session.Player.transform.position + Vector3.up - origin).normalized, session);
             }
-            else session.Player.TakeDamage(12);
+            else
+            {
+                session.Player.TakeDamage(12);
+            }
         }
+
         public void TakeDamage(float damage)
         {
             if (dead) return;
