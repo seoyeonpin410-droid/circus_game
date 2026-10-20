@@ -1,3 +1,6 @@
+> 2026-10-20: 최신 팀 버전 기반의 3막·보스전·사운드 확장이 적용되었습니다.
+> 현재 동작·파일 목록·Inspector·검증 안내는 [THREE_ACT_UPDATE.md](THREE_ACT_UPDATE.md)를 확인하세요.
+
 # 곡예 프로토타입
 
 Unity 6000.3.14f1에서 `CircusGame/Assets/Prototype/Scenes/CircusPrototype.unity`를 열고 Play를 누릅니다.
@@ -9,13 +12,13 @@ Unity 6000.3.14f1에서 `CircusGame/Assets/Prototype/Scenes/CircusPrototype.unit
 - WASD 이동, Space 점프, 마우스 시점, 좌클릭 방울 음파 투사체 발사, 우클릭 방울 근접 공격
 - 기본 3인칭 시점, V 키로 1인칭 / 3인칭 전환. 1인칭에서는 전용 방울 모델 표시
 - 추적형 근접 랑과 고정형 원거리 랑을 스포너로 소환. 동시에 최대 6마리
-- 제1막: 근거리 8마리. 제2막: 근거리 8마리와 원거리 4마리
+- 제1막: 근거리 8마리. 제2막: 강화된 근거리 8마리와 원거리 4마리. 제3막: 보스 1마리
 - 근거리 랑: 플레이어 추적 후 근접 공격. 원거리 랑: 예고선 후 투사체 발사
 - 플레이어와 적 체력바 / 남은 랑 / 무대 위 랑 / 점수 / 라운드 HUD
 - 체력 10% 미만에서 감염 상태와 녹색 체력바, 감염 시 공격력 증가
 - ESC 또는 HUD의 정지 버튼으로 일시정지, 계속하기, 메인 화면 복귀
-- 패배 / 두 막 완료 결과와 재시작
-- 실제 방울 효과음과 음량 설정, Windows 빌드의 전체 화면 설정
+- 패배 / 보스 처치 후 세 막 완료 결과와 재시작
+- 직접 합성한 19종 효과음과 음량 설정, Windows 빌드의 전체 화면 설정
 
 ## 팀 작업 시 참고
 
@@ -25,7 +28,7 @@ Unity 6000.3.14f1에서 `CircusGame/Assets/Prototype/Scenes/CircusPrototype.unit
 
 감염 기준은 상세기획서 플레이 방식의 10% 미만을 사용했습니다. 과제 안내의 투사체 공격과 적 AI 2종 조건에 맞춰 방울 음파 발사와 근접 랑 추적을 추가했습니다. 원거리 랑은 고정형입니다. 인원수는 시연용 8+12로 설정했으며, `Show Director`에서 변경할 수 있습니다. 거대 관중, 상세 내부 공간, 최종 에너미 모델은 이번 기본 프로토타입 범위에 포함되지 않습니다.
 
-`Assets/Prototype/Scripts`에 기능별 런타임 코드가 있습니다. `Assets/Prototype/Editor`의 검증 코드는 이동·점프·공격·피격·감염·두 라운드·UI·재시작을 실제 Play Mode에서 점검합니다. 테스트 보고서는 Unity 프로젝트의 `Temp/circus-verification.txt`에 저장됩니다.
+`Assets/Prototype/Scripts`에 기능별 런타임 코드가 있습니다. `Assets/Prototype/Editor`의 검증 코드는 이동·점프·공격·피격·감염·두 라운드·UI·재시작을 실제 Play Mode에서 점검합니다. 3막 테스트 보고서는 Unity 프로젝트의 `Temp/three-act-verification.txt`에 저장됩니다.
 
 Windows 실행 파일은 `CircusGame/Builds/CircusPrototype/CircusPrototype.exe`입니다. 다른 PC에 전달할 때는 실행 파일만 보내지 말고 `CircusPrototype` 폴더 전체를 압축해 전달합니다. 빌드 폴더는 Git에서 제외됩니다.
 

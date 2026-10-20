@@ -33,6 +33,11 @@ namespace CircusPrototype
         [SerializeField] Button pauseMenuButton;
         [SerializeField] Button retryButton;
         [SerializeField] Button endingMenuButton;
+        [SerializeField] TextMeshProUGUI countdownText;
+        [SerializeField] GameObject countdownPanel;
+        [SerializeField] GameObject bossPanel;
+        [SerializeField] Image bossHealthFill;
+        [SerializeField] TextMeshProUGUI bossHealthText;
         CircusSession session;
         float announcementUntil;
         bool settingsOpen;
@@ -71,15 +76,32 @@ namespace CircusPrototype
             healthFill.fillAmount = hp / 100;
             healthFill.color = session.Infected ? new Color(.35f, .8f, .43f) : new Color(.78f, .18f, .23f);
             healthText.text = $"{(session.Infected ? "감염" : "체력")}  {Mathf.CeilToInt(hp)} / 100";
-            roundText.text = $"제{session.Round}막 / 2";
-            remainingText.text = $"남은 랑 {session.Remaining:00}   ·   무대 위 {session.Alive:00}";
+            roundText.text = session.Round == 3 ? "3막 - Boss" : $"제{session.Round}막 / 3";
+            remainingText.text = session.Round == 3 ? "도깨비 대장을 쓰러뜨리세요" : $"남은 랑 {session.Remaining:00}   ·   무대 위 {session.Alive:00}";
             scoreText.text = $"점수 {session.Score:0000}";
             rangedLegend.SetActive(session.Round > 1);
-            message.gameObject.SetActive(Time.time < announcementUntil && session.State != ShowState.Menu);
+            message.gameObject.SetActive(Time.time < announcementUntil && session.State != ShowState.Menu && session.State != ShowState.Countdown);
+            if (countdownText)
+            {
+                countdownText.text = session.CountdownText;
+                bool showCountdown = session.CountdownText.Length > 0 && session.State != ShowState.Paused && session.State != ShowState.Menu;
+                countdownText.gameObject.SetActive(showCountdown);
+                if (countdownPanel) countdownPanel.SetActive(showCountdown);
+            }
+            if (bossPanel)
+            {
+                bool showBoss = session.Boss && session.Boss.Health > 0 && session.Round == 3;
+                bossPanel.SetActive(showBoss);
+                if (showBoss)
+                {
+                    bossHealthFill.fillAmount = session.Boss.Health / session.Boss.MaxHealth;
+                    bossHealthText.text = $"도깨비 대장  {Mathf.CeilToInt(session.Boss.Health)} / {session.Boss.MaxHealth:0}";
+                }
+            }
             bool victory = session.State == ShowState.Victory;
-            endingTitle.text = victory ? "공연 종료" : "무인의 마지막 곡예";
+            endingTitle.text = victory ? "게임 클리어" : "무인의 마지막 곡예";
             endingBody.text = victory
-                ? $"{(session.Infected ? "감염된 채로" : "살아남아")} 두 막을 마쳤습니다.\n최종 점수  {session.Score}"
+                ? $"{(session.Infected ? "감염된 채로" : "살아남아")} 도깨비 대장을 쓰러뜨렸습니다.\n세 막의 공연 완료 · 최종 점수  {session.Score}"
                 : $"무대는 다음 무인을 기다립니다.\n제{session.Round}막 · 점수  {session.Score}";
         }
         void RefreshPanels()
@@ -93,34 +115,5 @@ namespace CircusPrototype
             pause.SetActive(session.State == ShowState.Paused);
             ending.SetActive(session.State == ShowState.Victory || session.State == ShowState.Defeat);
         }
-        void OnGUI()
-        {
-            if (!session || session.State != ShowState.Countdown)
-                return;
-
-            float width = 300f;
-            float height = 240f;
-
-            GUIStyle style = new GUIStyle(GUI.skin.label);
-            style.fontSize = 150;
-            style.fontStyle = FontStyle.Bold;
-            style.alignment = TextAnchor.MiddleCenter;
-            style.normal.textColor = Color.white;
-
-            GUI.Label(
-                new Rect(
-                    (Screen.width - width) / 2f,
-                    (Screen.height - height) / 2f,
-                    width,
-                    height
-                ),
-                session.CountdownNumber.ToString(),
-                style
-            );
-        }
     }
-
-
 }
-
-

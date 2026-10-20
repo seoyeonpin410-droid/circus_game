@@ -28,7 +28,14 @@ namespace CircusPrototype
         Quaternion bellRest;
         CircusCamera cameraRig;
         Renderer[] bodyRenderers;
-        readonly Collider[] attackHits = new Collider[24];
+        readonly Collider[] attackHits = new Collider[64];
+        readonly System.Collections.Generic.HashSet<CircusEnemy> hitEnemies = new System.Collections.Generic.HashSet<CircusEnemy>();
+        CircusAttackArea meleeArea;
+        bool meleePending;
+        float meleeReady;
+        Vector3 meleeOrigin, meleeForward;
+        public bool MeleePending => meleePending;
+        public CircusAttackArea MeleeArea => meleeArea;
         public float Health { get; private set; } = 100;
         public int AttackCount { get; private set; }
         public Vector3 AimDirection { get; private set; } = Vector3.forward;
@@ -46,23 +53,11 @@ namespace CircusPrototype
             controller = GetComponent<CharacterController>();
             startPosition = transform.position;
             bellRest = bell.localRotation;
-            if (bellAudio)
-            {
-                const int rate = 22050;
-                var samples = new float[rate];
-                for (int i = 0; i < samples.Length; i++)
-                {
-                    float t = i / (float)rate;
-                    samples[i] = (Mathf.Sin(2 * Mathf.PI * 880 * t) + .45f * Mathf.Sin(2 * Mathf.PI * 1323 * t)
-                        + .2f * Mathf.Sin(2 * Mathf.PI * 2100 * t)) * .23f * Mathf.Exp(-7 * t);
-                }
-                bellAudio.clip = AudioClip.Create("Muin Bell", samples.Length, 1, rate, false);
-                bellAudio.clip.SetData(samples, 0);
-            }
+            meleeArea = CircusAttackArea.Create("Player melee reach", transform);
         }
         void Update()
         {
-            if (!session || !session.IsRunning) return;
+            if (!session || !session.IsRunning) { if (meleeArea) meleeArea.Hide(); return; }
             var keyboard = Keyboard.current;
             Vector2 input = Vector2.zero;
             if (keyboard != null)
@@ -79,6 +74,12 @@ namespace CircusPrototype
                 verticalSpeed = Mathf.Sqrt(jumpHeight * 40);
             verticalSpeed -= 20 * Time.deltaTime;
             controller.Move((movement + Vector3.up * verticalSpeed) * Time.deltaTime);
+            if (meleePending)
+            {
+                meleeArea.Show(meleeOrigin, meleeForward, attackRange, Mathf.Acos(.25f) * Mathf.Rad2Deg,
+                    new Color(1,.75f,.15f,.25f));
+                if (Time.time >= meleeReady) FinishMelee();
+            }
             var mouse = Mouse.current;
             if (mouse != null)
             {
@@ -103,7 +104,7 @@ namespace CircusPrototype
             nextShot = Time.time + attackCooldown;
             attackTime = Time.time;
             AttackCount++;
-            if (bellAudio) bellAudio.PlayOneShot(bellAudio.clip);
+            CircusAudio.Play(CircusCue.PlayerShot, transform.position);
             var ray = aimCamera.ViewportPointToRay(new Vector3(.5f, .5f));
             var aimPoint = Physics.Raycast(ray, out var hit, 40, (1 << 0) | enemyMask.value,
                 QueryTriggerInteraction.Ignore) ? hit.point : ray.GetPoint(40);
@@ -114,38 +115,43 @@ namespace CircusPrototype
         }
         public bool Attack()
         {
-            if (!session || session.State != ShowState.Playing || Time.time < nextAttack) return false;
+            if (!session || !session.IsRunning || meleePending || Time.time < nextAttack) return false;
             nextAttack = Time.time + attackCooldown;
-            attackTime = Time.time;
-            AttackCount++;
-            if (bellAudio) bellAudio.PlayOneShot(bellAudio.clip);
-            int count = Physics.OverlapSphereNonAlloc(transform.position + Vector3.up, attackRange,
+            meleePending = true; meleeReady = Time.time + .18f;
+            meleeOrigin = transform.position; meleeForward = cameraRig.AimForward;
+            meleeArea.Show(meleeOrigin, meleeForward, attackRange, Mathf.Acos(.25f)*Mathf.Rad2Deg, new Color(1,.75f,.15f,.25f));
+            return true;
+        }
+        void FinishMelee()
+        {
+            meleePending = false; attackTime = Time.time; AttackCount++;
+            CircusAudio.Play(CircusCue.PlayerMelee, transform.position);
+            int count = Physics.OverlapSphereNonAlloc(meleeOrigin + Vector3.up, attackRange + 1,
                 attackHits, enemyMask, QueryTriggerInteraction.Collide);
+            hitEnemies.Clear();
             for (int i = 0; i < count; i++)
             {
                 var enemy = attackHits[i].GetComponentInParent<CircusEnemy>();
-                if (!enemy) continue;
-                var direction = enemy.transform.position - transform.position;
-                direction.y = 0;
-                if (Vector3.Dot(AimDirection, direction.normalized) >= .25f)
+                if (enemy && hitEnemies.Add(enemy) && meleeArea.Contains(enemy.transform.position))
                     enemy.TakeDamage(session.Infected ? 40 : 25);
             }
+            meleeArea.Hide();
             if (bellWave)
             {
                 for (int i = 0; i < bellWave.positionCount; i++)
                 {
-                    var direction = Quaternion.AngleAxis(Mathf.Lerp(-72, 72,
-                        i / (float)(bellWave.positionCount - 1)), Vector3.up) * AimDirection;
-                    bellWave.SetPosition(i, transform.position + Vector3.up * .12f + direction * attackRange);
+                    var direction = Quaternion.AngleAxis(Mathf.Lerp(-Mathf.Acos(.25f)*Mathf.Rad2Deg, Mathf.Acos(.25f)*Mathf.Rad2Deg,
+                        i / (float)(bellWave.positionCount - 1)), Vector3.up) * meleeForward;
+                    bellWave.SetPosition(i, meleeOrigin + Vector3.up * .12f + direction * attackRange);
                 }
                 bellWave.enabled = true;
             }
-            return true;
         }
         public void TakeDamage(float amount)
         {
             if (!session || !session.IsRunning || Time.time - lastDamage < .65f) return;
             lastDamage = Time.time;
+            CircusAudio.Play(CircusCue.PlayerHit, transform.position);
             Health = Mathf.Max(0, Health - amount);
             session.HealthChanged();
         }
@@ -158,7 +164,8 @@ namespace CircusPrototype
             Health = 100;
             verticalSpeed = nextAttack = nextShot = 0;
             lastDamage = attackTime = -100;
-            AttackCount = 0;
+            AttackCount = 0; meleePending = false;
+            if (meleeArea) meleeArea.Hide();
             if (bellWave) bellWave.enabled = false;
         }
     }

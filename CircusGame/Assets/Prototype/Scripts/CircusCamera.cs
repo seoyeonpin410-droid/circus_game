@@ -28,7 +28,7 @@ namespace CircusPrototype
         }
         void Update()
         {
-            activeView = session && session.IsRunning;
+            activeView = session && session.CanPause;
             bool capture = activeView && Application.isFocused;
             Cursor.lockState = capture ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !capture;

@@ -39,7 +39,7 @@ public static class CircusCombatVerification
         {
             session.BeginShow();
             rig.SetFirstPerson(first);
-            yield return new WaitForSeconds(.2f);
+            yield return new WaitForSeconds(3.3f);
             var target = Object.Instantiate(prefab, session.Player.transform.position + rig.AimForward * 8, Quaternion.identity);
             target.Bind(session);
             typeof(CircusEnemy).GetField("moveSpeed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(target, 0f);
@@ -59,12 +59,12 @@ public static class CircusCombatVerification
             target.transform.position = session.Player.transform.position + rig.AimForward * 2;
             Physics.SyncTransforms(); before = target.Health;
             InputSystem.QueueStateEvent(mouse, new MouseState {position = mousePosition}.WithButton(MouseButton.Right));
-            yield return new WaitForSeconds(.12f);
+            yield return new WaitForSeconds(.32f);
             InputSystem.QueueStateEvent(mouse, new MouseState {position = mousePosition});
             Check(!target || target.Health < before, (first ? "First" : "Third") + " person right click retains melee attack");
             if (target) Object.Destroy(target.gameObject);
         }
-        session.BeginShow(); yield return new WaitForSeconds(.1f);
+        session.BeginShow(); yield return new WaitForSeconds(3.3f);
         var chaser = Object.Instantiate(prefab, session.Player.transform.position + Vector3.right * 4, Quaternion.identity);
         chaser.Bind(session);
         yield return new WaitForSeconds(2.8f);

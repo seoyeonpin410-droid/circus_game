@@ -30,7 +30,7 @@ public static class CircusCameraVerification
         InputSystem.settings.backgroundBehavior=InputSettings.BackgroundBehavior.IgnoreFocus;
         InputSystem.settings.editorInputBehaviorInPlayMode=InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
         var keyboard=InputSystem.AddDevice<Keyboard>();
-        session.BeginShow(); yield return new WaitForSeconds(.2f);
+        session.BeginShow(); yield return new WaitForSeconds(3.3f);
         Check(!rig.FirstPerson && !cam.orthographic,"Default perspective third person");
         Check(Vector3.Distance(cam.transform.position,session.Player.transform.position)>4,"Camera follows behind character");
         var position=session.Player.transform.position;
