@@ -1,6 +1,10 @@
 # 최신 전투 개선
 
-최신 AI·2페이즈·스폰/피격 예고·효과음 연결·Inspector 안내는 [COMBAT_POLISH_UPDATE.md](COMBAT_POLISH_UPDATE.md)를 참고하세요. 아래는 기존 프로토타입 기록입니다.
+최신 보스 낙하 등장·카메라·포효·공격 준비 동작과 Inspector 값은 [BOSS_ENTRANCE_UPDATE.md](BOSS_ENTRANCE_UPDATE.md)를 참고하세요.
+
+세 공격의 모션·타격감·밸런스와 최종 Inspector 값은 [COMBAT_PRESENTATION_UPDATE.md](COMBAT_PRESENTATION_UPDATE.md)를 참고하세요. 현재 소리는 BGM과 낮은 근접 적중음·내려찍기 충격음 두 개만 재생합니다.
+
+최신 3페이즈 보스 패턴·BGM·Inspector 안내는 [FINAL_BOSS_UPDATE.md](FINAL_BOSS_UPDATE.md)를 참고하세요. 아래는 기존 프로토타입 기록입니다.
 
 > 현재 사운드는 이전 합성음 19종으로 되돌렸으며 보스 장판 패턴을 추가했습니다. [GROUND_PATTERN_UPDATE.md](GROUND_PATTERN_UPDATE.md)를 확인하세요.
 

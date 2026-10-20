@@ -43,9 +43,20 @@ namespace CircusPrototype
         float announcementUntil;
         bool settingsOpen;
         bool initialized;
+        RectTransform countdownRect;Vector2 countdownPosition,countdownSize,framePosition;
+        Color countdownColor,frameColor;float countdownFontSize;
+        UnityEngine.UI.Image countdownFrame;Transform countdownMask;CanvasGroup bossCanvasGroup;
+        bool countdownTextInsideFrame;
+        [SerializeField] float bossNamePopupSeconds=.32f,bossNameYOffset=-230;
+        public bool BossNameVisible {get;private set;}
+        public bool BossHealthVisible=>bossPanel && bossPanel.activeInHierarchy;
         public void Bind(CircusSession value)
         {
             session = value;
+            if(countdownText){countdownRect=countdownText.rectTransform;countdownPosition=countdownRect.anchoredPosition;countdownSize=countdownRect.sizeDelta;countdownColor=countdownText.color;countdownFontSize=countdownText.fontSize;countdownMask=countdownText.transform.Find("Artist Countdown Mask");}
+            if(countdownPanel){countdownFrame=countdownPanel.GetComponent<UnityEngine.UI.Image>();framePosition=((RectTransform)countdownPanel.transform).anchoredPosition;if(countdownFrame)frameColor=countdownFrame.color;}
+            countdownTextInsideFrame=countdownPanel && countdownText && countdownText.transform.IsChildOf(countdownPanel.transform);
+            if(bossPanel)bossCanvasGroup=bossPanel.GetComponent<CanvasGroup>();
             startButton.onClick.AddListener(session.BeginShow);
             quitButton.onClick.AddListener(session.Quit);
             settingsButton.onClick.AddListener(() => { settingsOpen = true; RefreshPanels(); });
@@ -84,24 +95,39 @@ namespace CircusPrototype
             remainingText.text = session.Round == 3 ? "도깨비 대장을 쓰러뜨리세요" : $"남은 랑 {session.Remaining:00}   ·   무대 위 {session.Alive:00}";
             scoreText.text = $"점수 {session.Score:0000}";
             rangedLegend.SetActive(session.Round > 1);
+            var entry=session.Boss?session.Boss.GetComponent<CircusBossEntrance>():null;
             message.gameObject.SetActive(Time.time < announcementUntil && session.State != ShowState.Menu && session.State != ShowState.Countdown);
             if (countdownText)
             {
-                countdownText.text = session.CountdownText;
-                bool showCountdown = session.CountdownText.Length > 0 && session.State != ShowState.Paused && session.State != ShowState.Menu;
-                countdownText.gameObject.SetActive(showCountdown);
-                if (countdownPanel) countdownPanel.SetActive(showCountdown);
+                bool intro=session.State==ShowState.BossIntro && entry;
+                BossNameVisible=intro && entry.NameAge>=0;
+                bool showCountdown=session.CountdownText.Length>0 && session.State!=ShowState.Paused && session.State!=ShowState.Menu;
+                countdownText.text=BossNameVisible?"도깨비 대장":session.CountdownText;
+                countdownText.gameObject.SetActive(showCountdown || BossNameVisible);if(countdownPanel)countdownPanel.SetActive(showCountdown || BossNameVisible);
+                float age=BossNameVisible?entry.NameAge:0;
+                float popup=BossNameVisible?Mathf.Clamp01(age/Mathf.Max(.05f,bossNamePopupSeconds)):1;
+                float scale=popup<.5f?Mathf.Lerp(.8f,1.05f,popup*2):Mathf.Lerp(1.05f,1,(popup-.5f)*2);
+                float alpha=BossNameVisible?Mathf.Clamp01(age/.12f)*(1-entry.ReturnBlend):1;
+                countdownRect.localScale=Vector3.one*(BossNameVisible && !countdownTextInsideFrame?scale:1);
+                countdownRect.anchoredPosition=BossNameVisible && !countdownTextInsideFrame?new Vector2(0,bossNameYOffset):countdownPosition;
+                countdownRect.sizeDelta=BossNameVisible?new Vector2(620,125):countdownSize;
+                countdownText.fontSize=BossNameVisible?76:countdownFontSize;
+                countdownText.color=new Color(countdownColor.r,countdownColor.g,countdownColor.b,countdownColor.a*alpha);
+                if(countdownPanel){var rect=(RectTransform)countdownPanel.transform;rect.localScale=Vector3.one*(BossNameVisible?scale:1);rect.anchoredPosition=BossNameVisible?new Vector2(0,bossNameYOffset):framePosition;}
+                if(countdownFrame)countdownFrame.color=new Color(frameColor.r,frameColor.g,frameColor.b,frameColor.a*alpha);
+                if(countdownMask)countdownMask.gameObject.SetActive(!intro);
             }
+
             if (bossPanel)
             {
-                bool showBoss = session.Boss && session.Boss.Health > 0 && session.Round == 3;
-                bossPanel.SetActive(showBoss);
+                bool showBoss = session.Boss && session.Boss.Health > 0 && session.Round == 3 && (!entry || entry.HealthVisible);
+                bossPanel.SetActive(showBoss);if(bossCanvasGroup)bossCanvasGroup.alpha=entry?Mathf.Clamp01((entry.NameAge-.16f)/.25f):1;
                 if (showBoss)
                 {
                     bossHealthFill.fillAmount = session.Boss.Health / session.Boss.MaxHealth;
                     int phase=session.Boss.GetComponent<CircusBoss>().Phase;
                     bossHealthText.text = $"도깨비 대장 · {phase}페이즈  {Mathf.CeilToInt(session.Boss.Health)} / {session.Boss.MaxHealth:0}";
-                    bossHealthFill.color=phase==2 ? new Color(.85f,.28f,.18f) : new Color(.08f,.68f,.48f);
+                    bossHealthFill.color=phase==3 ? new Color(.7f,.15f,.65f) : phase==2 ? new Color(.85f,.28f,.18f) : new Color(.08f,.68f,.48f);
                 }
             }
             bool victory = session.State == ShowState.Victory;

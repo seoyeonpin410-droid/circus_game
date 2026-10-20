@@ -19,19 +19,19 @@ public static class CircusCombatPolishSetup
             if(names[i]=="UIClick")path="Assets/Prototype/Audio/Free/KenneyInterface/click_001.ogg";
             clips.GetArrayElementAtIndex(i).objectReferenceValue=names[i]=="FlameFlight" ? null : AssetDatabase.LoadAssetAtPath<AudioClip>(path);
             if(names[i]!="FlameFlight" && !clips.GetArrayElementAtIndex(i).objectReferenceValue)throw new Exception("Missing sound: "+path);
-            volumes.GetArrayElementAtIndex(i).floatValue=gains[i];
+            volumes.GetArrayElementAtIndex(i).floatValue=i<gains.Length?gains[i]:.6f;
         }
         so.ApplyModifiedPropertiesWithoutUndo();
         var root=PrefabUtility.LoadPrefabContents("Assets/Prototype/Prefabs/DokkaebiBoss.prefab");
         try
         {
             var boss=new SerializedObject(root.GetComponent<CircusBoss>());
-            boss.FindProperty("windupSeconds").floatValue=.65f;
+            boss.FindProperty("swing").FindPropertyRelative("windup").floatValue=.55f;
             boss.ApplyModifiedPropertiesWithoutUndo();
             PrefabUtility.SaveAsPrefabAsset(root,"Assets/Prototype/Prefabs/DokkaebiBoss.prefab");
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
         EditorSceneManager.MarkSceneDirty(audio.gameObject.scene);EditorSceneManager.SaveOpenScenes();AssetDatabase.SaveAssets();
-        return "23 cue slots: 22 role-specific clips, flight loop intentionally silent; boss telegraph 0.65 seconds";
+        return clips.arraySize+" cue slots bound; flight loop intentionally silent; boss swing warning 0.55 seconds";
     }
 }

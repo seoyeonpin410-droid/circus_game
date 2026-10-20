@@ -735,6 +735,7 @@ GameObject:
   - component: {fileID: 143706935}
   - component: {fileID: 143706937}
   - component: {fileID: 143706936}
+  - component: {fileID: 143706938}
   m_Layer: 0
   m_Name: Boss Health
   m_TagString: Untagged
@@ -804,6 +805,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 143706934}
   m_CullTransparentMesh: 1
+--- !u!225 &143706938
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 143706934}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &157575754
 GameObject:
   m_ObjectHideFlags: 0
@@ -6169,6 +6182,8 @@ GameObject:
   - component: {fileID: 652908206}
   - component: {fileID: 652908205}
   - component: {fileID: 652908207}
+  - component: {fileID: 652908208}
+  - component: {fileID: 652908209}
   m_Layer: 0
   m_Name: Show Director
   m_TagString: Untagged
@@ -6208,6 +6223,8 @@ MonoBehaviour:
   spawnInterval: 1.3
   maxAlive: 6
   intermissionSeconds: 2.5
+  bossLandingPosition: {x: 0, y: 0.06, z: 0}
+  bossIntroPlayerDistance: 7
 --- !u!4 &652908206
 Transform:
   m_ObjectHideFlags: 0
@@ -6259,6 +6276,11 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 2cc1dc651f146b84db5e8b94dc286124, type: 3}
   - {fileID: 8300000, guid: 61d10c80d0eeaaa45bb501fe9219a9f7, type: 3}
   - {fileID: 8300000, guid: 7ff9155537c65ef48884a8e9e29bb9fe, type: 3}
+  - {fileID: 8300000, guid: c6a2f9a5ebc9c8c4f982f990de42616b, type: 3}
+  - {fileID: 8300000, guid: b796ec9d0acc1114ca6395842a7305b0, type: 3}
+  - {fileID: 8300000, guid: 6e9abf5637981084e82ca4d1e6e06e30, type: 3}
+  - {fileID: 8300000, guid: ccfabe037c843b341b05f5f83cee31f5, type: 3}
+  - {fileID: 8300000, guid: a9016296a1208b34fb78ce88c57e1b2f, type: 3}
   cueVolumes:
   - 0.25
   - 0.35
@@ -6283,9 +6305,58 @@ MonoBehaviour:
   - 0.5
   - 0.3
   - 0.55
+  - 0.18
+  - 0.65
+  - 0.65
+  - 0.65
+  - 0.65
+  effectsEnabled: 0
+  combatAccentsEnabled: 1
+  meleeImpactVolume: 0.12
+  slamImpactVolume: 0.2
+  meleeImpactClip: {fileID: 8300000, guid: 6c54c04cdb5f4164e94d8a51df92273f, type: 3}
+  slamImpactClip: {fileID: 8300000, guid: 499b751c87df7234892d3c3a37e9b5e5, type: 3}
+  bossIntroSoundsEnabled: 1
+  bossLandingClip: {fileID: 8300000, guid: 411d405192de16c41abc3a983d4f0a1c, type: 3}
+  bossRoarClip: {fileID: 8300000, guid: 8bce9d878e631b344b8568f8e9cc2b03, type: 3}
+  bossLandingVolume: 0.24
+  bossRoarVolume: 0.15
   effectsVolume: 0.55
   maxVoices: 12
   minRepeatSeconds: 0.075
+--- !u!114 &652908208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652908204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42dacabebccf4cb4086a3c1914e885a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusMusic
+  combatLoop: {fileID: 8300000, guid: 8a37a4f4cebbdd14ca133e14e3bdfee3, type: 3}
+  bossLoop: {fileID: 8300000, guid: 89b4b5afacbf20c40a4154246ebc07e2, type: 3}
+  finalPercussion: {fileID: 8300000, guid: 3aa0a3845201efd43a22d505aaeffc05, type: 3}
+  musicVolume: 0.16
+  finalLayerVolume: 0.45
+  fadeSeconds: 1.5
+  introFadeOutSeconds: 0.4
+  introBossFadeSeconds: 0.85
+--- !u!114 &652908209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652908204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9eb3bfbd6f2677469de042611207c95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusCombatFx
+  glowMaterial: {fileID: 2100000, guid: 0342e3b0fc5bd7049b4931cd8dad73fd, type: 2}
 --- !u!1 &656835074
 GameObject:
   m_ObjectHideFlags: 0
@@ -11491,7 +11562,16 @@ MonoBehaviour:
   moveSpeed: 6
   jumpHeight: 1.8
   attackRange: 3.6
-  attackCooldown: 0.45
+  attackCooldown: 0.56
+  rangedCooldown: 0.65
+  meleeWindup: 0.11
+  meleeSwing: 0.09
+  meleeRecovery: 0.18
+  meleeLunge: 0.08
+  meleeCounterYaw: 14
+  meleeSwingYaw: 24
+  bossDamageScale: 0.5
+  hitStopSeconds: 0.04
   enemyMask:
     serializedVersion: 2
     m_Bits: 512
@@ -13151,6 +13231,8 @@ MonoBehaviour:
   bossPanel: {fileID: 143706934}
   bossHealthFill: {fileID: 598104772}
   bossHealthText: {fileID: 594026969}
+  bossNamePopupSeconds: 0.32
+  bossNameYOffset: -230
 --- !u!114 &1356738141
 MonoBehaviour:
   m_ObjectHideFlags: 0

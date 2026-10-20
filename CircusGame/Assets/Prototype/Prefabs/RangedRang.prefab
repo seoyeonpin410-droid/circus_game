@@ -480,10 +480,15 @@ MonoBehaviour:
   attackInterval: 2.3
   meleeRange: 2.2
   moveSpeed: 2.6
+  windupSeconds: 0.35
   projectile: {fileID: 3961917780778876081, guid: 0b3f9fe49229a5a4d88ed3610992feff, type: 3}
   model: {fileID: 8861558715358660988}
   healthFill: {fileID: 8229106945869997658}
   warning: {fileID: 402114318616969213}
+  rangedLean: 10
+  rangedPullback: 0.1
+  rangedRecoil: 0.07
+  rangedRecovery: 0.24
 --- !u!1 &4222358806125009633
 GameObject:
   m_ObjectHideFlags: 0

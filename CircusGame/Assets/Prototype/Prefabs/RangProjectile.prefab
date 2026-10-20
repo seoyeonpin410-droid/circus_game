@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3961917780778876081}
   - component: {fileID: 654458554819422421}
   - component: {fileID: 5221065020577545478}
+  - component: {fileID: 1708566797762690852}
   m_Layer: 0
   m_Name: RangProjectile
   m_TagString: Untagged
@@ -51,7 +52,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1178151077930828044}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -117,7 +118,7 @@ TrailRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1178151077930828044}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -293,3 +294,18 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!114 &1708566797762690852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178151077930828044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4247500d75dcc5b4eb4f7c88ac357d9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusProjectileVfx
+  color: {r: 0.12, g: 1, b: 0.75, a: 1}
+  coreSize: 0.42
+  tailLifetime: 0.18

@@ -13,6 +13,7 @@ namespace CircusPrototype
         Material rimMaterial;
         float age, warningSeconds, burnSeconds, damage, nextDamage;
         public GroundFlamePhase Phase { get; private set; }
+        public CircusEnemy Owner=>owner;
         public CircusAttackArea Area => area;
         public Vector3 Center => transform.position;
         public static CircusGroundFlame Create(CircusSession session, CircusEnemy owner,

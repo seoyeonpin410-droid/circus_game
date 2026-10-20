@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace CircusPrototype
 {
-    public enum ShowState { Menu, Countdown, Playing, Intermission, Paused, Victory, Defeat, BossIntro }
+    public enum ShowState { Menu, Countdown, Playing, Intermission, Paused, Victory, Defeat, BossIntro, BossDefeated }
     public sealed class CircusSession : MonoBehaviour
     {
         [SerializeField] CircusPlayer player;
@@ -14,8 +14,18 @@ namespace CircusPrototype
         [SerializeField] float spawnInterval = 1.3f;
         [SerializeField] int maxAlive = 6;
         [SerializeField] float intermissionSeconds = 2.5f;
+        [SerializeField] Vector3 bossLandingPosition=new Vector3(0,.06f,0);
+        [SerializeField,Min(4)] float bossIntroPlayerDistance=7;
         readonly List<CircusEnemy> enemies = new List<CircusEnemy>();
         Coroutine roundRoutine;
+        float hitStopRemaining, preHitStopScale=1;
+        public bool HitStopActive=>hitStopRemaining>0;
+        public int HitStopCount {get;private set;}
+        public void RequestHitStop(float seconds) {
+            if(!IsRunning)return;
+            if(hitStopRemaining<=0)preHitStopScale=Time.timeScale>0?Time.timeScale:1;
+            hitStopRemaining=Mathf.Max(hitStopRemaining,Mathf.Clamp(seconds,.03f,.05f));Time.timeScale=0;HitStopCount++;
+        }
         int spawned, defeated, round, score;
         bool infected;
         public ShowState State { get; private set; } = ShowState.Menu;
@@ -29,7 +39,7 @@ namespace CircusPrototype
         public int Score => score;
         public bool Infected => infected;
         public bool IsRunning => State == ShowState.Playing;
-        public bool CanPause => IsRunning || State == ShowState.Countdown || State == ShowState.Intermission || State == ShowState.BossIntro;
+        public bool CanPause => IsRunning || State == ShowState.Countdown || State == ShowState.Intermission || State == ShowState.BossIntro || State == ShowState.BossDefeated;
         public bool HasGameplayView => CanPause || State == ShowState.Paused;
         public float GameplaySeconds { get; private set; }
         public int CountdownNumber => Mathf.CeilToInt(CountdownRemaining);
@@ -42,6 +52,10 @@ namespace CircusPrototype
         }
         void Update()
         {
+            if(hitStopRemaining>0) {
+                hitStopRemaining-=Time.unscaledDeltaTime;
+                if(hitStopRemaining<=0 || !IsRunning) { hitStopRemaining=0;if(State!=ShowState.Paused)Time.timeScale=preHitStopScale; }
+            }
             if (IsRunning) GameplaySeconds += Time.deltaTime;
             if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true) TogglePause();
         }
@@ -79,12 +93,18 @@ namespace CircusPrototype
                 else
                 {
                     State = ShowState.BossIntro;
-                    Boss = Instantiate(bossPrefab, FarthestSpawn().position, Quaternion.identity);
-                    Boss.Bind(this); enemies.Add(Boss); spawned = 1; CircusAudio.Play(CircusCue.BossArrival);
-                    hud.Announce("3막 - BOSS · 도깨비 대장", 2.5f);
-                    yield return new WaitForSeconds(2.5f);
+                    ClearProjectiles();
+                    foreach(var hazard in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))Destroy(hazard.gameObject);
+                    PlacePlayerForBoss();
+                    Boss = Instantiate(bossPrefab, bossLandingPosition, Quaternion.identity);
+                    Boss.Bind(this); enemies.Add(Boss); spawned = 1;
+                    hud.Announce("3막 - BOSS",Boss.GetComponent<CircusBoss>().Entrance.QuietSeconds);
+                    yield return new WaitUntil(()=>State!=ShowState.Paused && (!Boss || Boss.GetComponent<CircusBoss>().Entrance.Complete));
                     State = ShowState.Playing;
                     while (Boss && Boss.Health > 0) yield return null;
+                    State=ShowState.BossDefeated;ClearProjectiles();
+                    hud.Announce("도깨비 대장 · 마지막 공연이 끝난다",Boss?Boss.GetComponent<CircusBoss>().DeathSeconds:1.5f);
+                    while(Boss)yield return null;
                     break;
                 }
                 State = ShowState.Intermission; ClearProjectiles();
@@ -94,6 +114,13 @@ namespace CircusPrototype
                 CircusAudio.Play(CircusCue.ActChange); State = ShowState.Playing;
             }
             State = ShowState.Victory; ClearProjectiles(); hud.Announce("3막 완료 · 게임 클리어", 0); CircusAudio.Play(CircusCue.Clear);
+        }
+        void PlacePlayerForBoss() {
+            var delta=player.transform.position-bossLandingPosition;delta.y=0;
+            if(delta.magnitude>=bossIntroPlayerDistance)return;
+            if(delta.sqrMagnitude<.01f)delta=-FindFirstObjectByType<CircusCamera>().AimForward;
+            var cc=player.GetComponent<CharacterController>();cc.enabled=false;
+            player.transform.position=bossLandingPosition+delta.normalized*bossIntroPlayerDistance;cc.enabled=true;
         }
         Transform FarthestSpawn()
         {
@@ -139,7 +166,7 @@ namespace CircusPrototype
             }
         }
         ShowState pausedFrom;
-        public void Pause() { if (!CanPause) return; pausedFrom = State; State = ShowState.Paused; Time.timeScale = 0; }
+        public void Pause() { if (!CanPause) return; hitStopRemaining=0;pausedFrom = State; State = ShowState.Paused; Time.timeScale = 0; }
         public void TogglePause() { if (State == ShowState.Paused) Resume(); else Pause(); }
         public void Resume() { if (State != ShowState.Paused) return; State = pausedFrom; Time.timeScale = 1; }
         public void ReturnToMenu() { ClearShow(); State = ShowState.Menu; hud.CloseSettings(); player.ResetPerformer(); }
@@ -153,8 +180,9 @@ namespace CircusPrototype
         }
         void ClearShow()
         {
-            Time.timeScale = 1; if (roundRoutine != null) StopCoroutine(roundRoutine);
+            hitStopRemaining=0;HitStopCount=0;Time.timeScale = 1; if (roundRoutine != null) StopCoroutine(roundRoutine);
             foreach (var enemy in enemies) if (enemy) Destroy(enemy.gameObject);
+            if(Boss)Destroy(Boss.gameObject);
             enemies.Clear(); Boss = null; CountdownText = ""; CountdownRemaining = 0;
             ClearProjectiles(); CircusAudio.StopFlights();
         }

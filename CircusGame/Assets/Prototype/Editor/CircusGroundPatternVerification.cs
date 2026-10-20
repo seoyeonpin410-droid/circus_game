@@ -26,7 +26,7 @@ public static class CircusGroundPatternVerification
         var enemy=Object.Instantiate(prefab,new Vector3(0,.06f,6),Quaternion.identity);enemy.Bind(session);
         var boss=enemy.GetComponent<CircusBoss>();
         typeof(CircusBoss).GetField("nextGround",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).SetValue(boss,0f);
-        float deadline=Time.realtimeSinceStartup+5;
+        float deadline=Time.realtimeSinceStartup+10;
         while(Object.FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None).Length==0 && Time.realtimeSinceStartup<deadline)yield return null;
         var first=Object.FindFirstObjectByType<CircusGroundFlame>();
         Check(first && boss.Action==BossAction.GroundCast,"Boss selects ground-cast state and spawns first seal");

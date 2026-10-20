@@ -404,6 +404,7 @@ GameObject:
   - component: {fileID: 6840552703994426452}
   - component: {fileID: 341210368314296437}
   - component: {fileID: 574788033884652628}
+  - component: {fileID: 6857420299538195328}
   m_Layer: 9
   m_Name: DokkaebiBoss
   m_TagString: Enemy
@@ -463,7 +464,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusEnemy
   ranged: 0
-  health: 650
+  health: 900
   attackInterval: 2.3
   meleeRange: 2.2
   moveSpeed: 2.6
@@ -472,6 +473,10 @@ MonoBehaviour:
   model: {fileID: 288308181505436353}
   healthFill: {fileID: 1781285529942325418}
   warning: {fileID: 8872317015372393913}
+  rangedLean: 10
+  rangedPullback: 0.1
+  rangedRecoil: 0.07
+  rangedRecovery: 0.24
 --- !u!143 &341210368314296437
 CharacterController:
   m_ObjectHideFlags: 0
@@ -510,24 +515,150 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusBoss
   moveSpeed: 2.1
-  meleeRadius: 3.8
-  meleeHalfAngle: 65
-  meleeDamage: 24
-  windupSeconds: 0.65
-  meleeCooldown: 1.4
-  rangedCooldown: 2.1
   rangedDistance: 6
-  projectileSpeed: 8.5
-  projectileDamage: 14
-  groundCooldown: 7.5
-  groundRadius: 1.8
-  groundWarning: 1.15
-  groundDuration: 1.4
-  groundDamage: 18
-  groundCount: 3
+  meleeHalfAngle: 65
+  phaseTwoHealth: 0.7
+  phaseThreeHealth: 0.35
   phaseTwoSpeed: 1.15
-  phaseTwoCooldown: 0.8
+  phaseThreeSpeed: 1.2
+  phaseTwoCooldown: 0.9
+  phaseThreeCooldown: 0.85
   transitionSeconds: 1.2
+  entranceSeconds: 4.1
+  deathSeconds: 1.5
+  positionSeconds: 0.45
+  arenaCenter: {x: 0, y: 0, z: 0}
+  centerStopDistance: 1.2
+  swing:
+    damage: 16
+    windup: 0.55
+    recovery: 0.9
+    cooldown: 2
+    range: 3.8
+    speed: 8.5
+    projectiles: 1
+    spread: 17
+  slam:
+    damage: 22
+    windup: 0.9
+    recovery: 1.6
+    cooldown: 7
+    range: 4.2
+    speed: 8.5
+    projectiles: 1
+    spread: 17
+  singleFlame:
+    damage: 10
+    windup: 0.6
+    recovery: 0.9
+    cooldown: 3
+    range: 16
+    speed: 8.5
+    projectiles: 1
+    spread: 17
+  fanFlame:
+    damage: 10
+    windup: 0.65
+    recovery: 1.1
+    cooldown: 6
+    range: 16
+    speed: 8
+    projectiles: 3
+    spread: 20
+  homingFlames:
+    damage: 8
+    windup: 0.7
+    recovery: 1.3
+    cooldown: 10
+    range: 16
+    speed: 6.5
+    projectiles: 3
+    spread: 22
+  dash:
+    damage: 18
+    windup: 0.65
+    recovery: 1.4
+    cooldown: 9
+    range: 8
+    speed: 12
+    projectiles: 1
+    spread: 17
+  doubleSwing:
+    damage: 14
+    windup: 0.55
+    recovery: 1.15
+    cooldown: 6
+    range: 3.8
+    speed: 8.5
+    projectiles: 1
+    spread: 17
+  ringFlames:
+    damage: 10
+    windup: 1.1
+    recovery: 1.8
+    cooldown: 22
+    range: 16
+    speed: 6
+    projectiles: 10
+    spread: 30
+  groundSeals:
+    damage: 12
+    windup: 0.9
+    recovery: 1.3
+    cooldown: 16
+    range: 1.8
+    speed: 0
+    projectiles: 3
+    spread: 17
+  projectileLifetime: 3.5
+  homingSeconds: 1
+  homingDegreesPerSecond: 28
+  homingInterval: 0.3
+  dashWidth: 2.4
+  comboGap: 0.3
+  groundDuration: 1.4
+  groundInterval: 0.45
+  meleeTwist: 26
+  meleeFollowThrough: 48
+  meleeStrikeSeconds: 0.1
+  meleeVisualStep: 0.12
+  rangedPullback: 0.18
+  rangedKick: 0.12
+  rangedReleaseHold: 0.16
+  poseRecoverySeconds: 0.25
+  dashCrouch: 0.16
+  dashPullback: 0.16
+  slamLift: 0.45
+  slamDropSeconds: 0.1
+  slamPoseRecovery: 0.3
+--- !u!114 &6857420299538195328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3661954374430574849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c799bf9c54efebb43bdb15d8440d111c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusBossEntrance
+  quietSeconds: 0.65
+  fallSeconds: 0.5
+  landingHold: 0.5
+  closeupSeconds: 0.55
+  roarSeconds: 1.05
+  returnSeconds: 0.85
+  fallHeight: 9
+  landingSquash: 0.94
+  roarScale: 0.025
+  roarLean: 12
+  wideDistance: 10
+  wideHeight: 3.5
+  closeDistance: 6.2
+  closeHeight: 2.4
+  lookHeight: 1.9
+  cinematicFov: 52
 --- !u!1 &6305238427106131615
 GameObject:
   m_ObjectHideFlags: 0

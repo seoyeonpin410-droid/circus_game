@@ -12,7 +12,13 @@ namespace CircusPrototype
         [SerializeField] float moveSpeed = 6;
         [SerializeField] float jumpHeight = 1.8f;
         [SerializeField] float attackRange = 3.6f;
-        [SerializeField] float attackCooldown = .45f;
+        [SerializeField] float attackCooldown = .56f;
+        [SerializeField] float rangedCooldown=.65f, meleeWindup=.11f, meleeSwing=.09f, meleeRecovery=.18f;
+        [SerializeField] float meleeLunge=.08f, meleeCounterYaw=14, meleeSwingYaw=24;
+        [SerializeField,Range(.1f,1)] float bossDamageScale=.5f;
+        [SerializeField,Range(.03f,.05f)] float hitStopSeconds=.04f;
+        Vector3 visualRest; float meleeStarted=-100; bool slashShown;
+        public float BossDamageScale=>bossDamageScale;
         [SerializeField] LayerMask enemyMask;
         [SerializeField] LineRenderer bellWave;
         [SerializeField] AudioSource bellAudio;
@@ -52,7 +58,7 @@ namespace CircusPrototype
             cameraRig = aimCamera.GetComponent<CircusCamera>();
             controller = GetComponent<CharacterController>();
             startPosition = transform.position;
-            bellRest = bell.localRotation;
+            bellRest = bell.localRotation; visualRest=visual.localPosition;
             meleeArea = CircusAttackArea.Create("Player melee reach", transform);
         }
         void Update()
@@ -76,8 +82,7 @@ namespace CircusPrototype
             controller.Move((movement + Vector3.up * verticalSpeed) * Time.deltaTime);
             if (meleePending)
             {
-                meleeArea.Show(meleeOrigin, meleeForward, attackRange, Mathf.Acos(.25f) * Mathf.Rad2Deg,
-                    new Color(1,.75f,.15f,.25f));
+                if(!slashShown && Time.time>=meleeStarted+meleeWindup) { slashShown=true; CircusCombatFx.Slash(meleeOrigin,meleeForward,attackRange*.78f,.16f); }
                 if (Time.time >= meleeReady) FinishMelee();
             }
             var mouse = Mouse.current;
@@ -93,15 +98,24 @@ namespace CircusPrototype
                         || !(UnityEngine.EventSystems.EventSystem.current?.IsPointerOverGameObject() ?? false)))
                     Attack();
             }
-            visual.rotation = Quaternion.LookRotation(AimDirection);
+            float elapsed=Time.time-meleeStarted, yaw=0, lunge=0;
+            if(elapsed<meleeWindup) yaw=-meleeCounterYaw*Mathf.SmoothStep(0,1,elapsed/Mathf.Max(.01f,meleeWindup));
+            else if(elapsed<meleeWindup+meleeSwing) {
+                float t=(elapsed-meleeWindup)/Mathf.Max(.01f,meleeSwing);
+                yaw=Mathf.Lerp(-meleeCounterYaw,meleeSwingYaw,t);lunge=meleeLunge*t;
+            } else if(elapsed<meleeWindup+meleeSwing+meleeRecovery) {
+                float t=1-Mathf.SmoothStep(0,1,(elapsed-meleeWindup-meleeSwing)/Mathf.Max(.01f,meleeRecovery));yaw=meleeSwingYaw*t;lunge=meleeLunge*t;
+            }
+            visual.rotation=Quaternion.LookRotation(elapsed<meleeWindup+meleeSwing+meleeRecovery?meleeForward:AimDirection)*Quaternion.Euler(0,yaw,0);
+            visual.localPosition=visualRest+transform.InverseTransformDirection(meleeForward)*lunge;
             float swing = Mathf.Clamp01((Time.time - attackTime) / .28f);
             bell.localRotation = bellRest * Quaternion.Euler(0, 0, Mathf.Sin(swing * Mathf.PI) * -65);
-            if (bellWave) bellWave.enabled = Time.time - attackTime < .18f;
+            if (bellWave) bellWave.enabled = false;
         }
         public bool Fire()
         {
             if (!session || session.State != ShowState.Playing || !soundProjectile || Time.time < nextShot) return false;
-            nextShot = Time.time + attackCooldown;
+            nextShot = Time.time + rangedCooldown;
             attackTime = Time.time;
             AttackCount++;
             CircusAudio.Play(CircusCue.PlayerShot, transform.position);
@@ -110,16 +124,17 @@ namespace CircusPrototype
                 QueryTriggerInteraction.Ignore) ? hit.point : ray.GetPoint(40);
             var origin = transform.position + Vector3.up * 1.3f + AimDirection * .65f;
             var shot = Instantiate(soundProjectile, origin, Quaternion.identity);
-            shot.LaunchPlayer(aimPoint - origin, session, session.Infected ? 40 : 25);
+            shot.LaunchPlayer(aimPoint - origin, session, session.Infected ? 40 : 25, bossDamageScale);
             return true;
         }
         public bool Attack()
         {
             if (!session || !session.IsRunning || meleePending || Time.time < nextAttack) return false;
             nextAttack = Time.time + attackCooldown;
-            meleePending = true; meleeReady = Time.time + .18f;
+            meleePending = true; meleeStarted=Time.time;slashShown=false; meleeReady = Time.time + meleeWindup+meleeSwing*.65f;
             meleeOrigin = transform.position; meleeForward = cameraRig.AimForward;
-            meleeArea.Show(meleeOrigin, meleeForward, attackRange, Mathf.Acos(.25f)*Mathf.Rad2Deg, new Color(1,.75f,.15f,.25f));
+            meleeArea.Show(meleeOrigin, meleeForward, attackRange, Mathf.Acos(.25f)*Mathf.Rad2Deg, Color.clear);
+            meleeArea.Hide();
             return true;
         }
         void FinishMelee()
@@ -128,28 +143,21 @@ namespace CircusPrototype
             CircusAudio.Play(CircusCue.PlayerMelee, transform.position);
             int count = Physics.OverlapSphereNonAlloc(meleeOrigin + Vector3.up, attackRange + 1,
                 attackHits, enemyMask, QueryTriggerInteraction.Collide);
-            hitEnemies.Clear();
+            hitEnemies.Clear(); bool landed=false;
             for (int i = 0; i < count; i++)
             {
                 var enemy = attackHits[i].GetComponentInParent<CircusEnemy>();
                 if (enemy && hitEnemies.Add(enemy) && meleeArea.Contains(enemy.transform.position))
                 {
-                    enemy.TakeDamage(session.Infected ? 40 : 25);
-                    if(session.Infected && !enemy.Spawning) cameraRig.Shake(.025f,.09f);
+                    float before=enemy.Health;
+                    enemy.TakeDamage((session.Infected ? 40 : 25)*(enemy.IsBoss?bossDamageScale:1));
+                    if(enemy.Health<before)landed=true;
                 }
             }
             meleeArea.Hide();
-            if (bellWave)
-            {
-                for (int i = 0; i < bellWave.positionCount; i++)
-                {
-                    var direction = Quaternion.AngleAxis(Mathf.Lerp(-Mathf.Acos(.25f)*Mathf.Rad2Deg, Mathf.Acos(.25f)*Mathf.Rad2Deg,
-                        i / (float)(bellWave.positionCount - 1)), Vector3.up) * meleeForward;
-                    bellWave.SetPosition(i, meleeOrigin + Vector3.up * .12f + direction * attackRange);
-                }
-                bellWave.enabled = true;
-            }
+            if(landed) { session.RequestHitStop(hitStopSeconds);cameraRig.Shake(.018f,.08f);CircusAudio.PlayAccent(false,meleeOrigin); }
         }
+
         public void TakeDamage(float amount)
         {
             if (!session || !session.IsRunning || Time.time - lastDamage < .65f) return;
@@ -168,7 +176,7 @@ namespace CircusPrototype
             Health = 100;
             verticalSpeed = nextAttack = nextShot = 0;
             lastDamage = attackTime = -100;
-            AttackCount = 0; meleePending = false;
+            AttackCount = 0; meleePending = false;meleeStarted=-100;visual.localPosition=visualRest;
             if (meleeArea) meleeArea.Hide();
             if (bellWave) bellWave.enabled = false;
         }

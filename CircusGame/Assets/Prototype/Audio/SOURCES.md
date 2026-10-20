@@ -1,4 +1,4 @@
-> 최신 연결은 Combat 직접 생성음 19종 + Kenney CC0 스윙/클릭 3종입니다. 비행 루프는 무음입니다. 상세 역할·볼륨·생성 방식은 저장소 루트의 COMBAT_POLISH_UPDATE.md를 확인하세요. 아래는 이전 작업의 출처 기록이며 Generated/Polished/JaggedStoneMagic은 현재 연결하지 않습니다.
+> 최신 상태: BGM 3개와 낮은 근접 적중음(MeleeAccent), 내려찍기 충격음(SlamAccent)을 유지합니다. 보스 등장 요청에 따라 등장 전용 BossLandingAccent(0.24), BossRoarAccent(0.15)만 추가했습니다. 새 두 소리는 외부 샘플 없이 Tools/GenerateBossEntranceAudio.py로 저역 진동·부드러운 잡음을 직접 합성했습니다. 나머지 일반 효과음은 비활성 상태입니다. 최신 연결과 볼륨은 BOSS_ENTRANCE_UPDATE.md를 확인하세요. 아래는 이전 작업의 출처 기록입니다.
 
 # 무료 효과음 출처
 
@@ -47,3 +47,4 @@
 Generated는 Python 표준 라이브러리만 사용하는 `Tools/GenerateCircusSounds.py`로 만들었습니다.
 22,050Hz 모노 16-bit PCM WAV이며 사인파·비정수 배음·스윕·고정 시드 잡음을 합성했습니다.
 이 도구를 다시 실행해도 현재 연결된 Polished 음원은 덮어쓰지 않습니다.
+

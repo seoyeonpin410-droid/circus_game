@@ -13,10 +13,13 @@ public static class CircusThreeActVerification
 {
     static readonly List<string> report=new List<string>();
     const string Report="Temp/three-act-verification.txt";
+    static bool running;
     static void Check(bool value,string title) { report.Add((value ? "PASS " : "FAIL ")+title); File.WriteAllLines(Report,report); }
     public static string Run()
     {
-        report.Clear(); Object.FindFirstObjectByType<CircusSession>().StartCoroutine(Verify()); return "Three act runtime verification started";
+        if(running)return "Three act verification is already running";
+        running=true;report.Clear();File.WriteAllText(Report,"RUNNING "+DateTime.Now.ToString("O"));
+        Object.FindFirstObjectByType<CircusSession>().StartCoroutine(Verify()); return "Three act runtime verification started";
     }
     static void Move(CircusPlayer player,Vector3 position)
     { var controller=player.GetComponent<CharacterController>(); controller.enabled=false; player.transform.position=position; controller.enabled=true; Physics.SyncTransforms(); }
@@ -48,6 +51,12 @@ public static class CircusThreeActVerification
         Check(session.IsRunning && session.CountdownText=="START!","Three seconds unlock gameplay with START");
         yield return new WaitForSeconds(.6f);
         Check(session.GameplaySeconds>0 && session.Round==1,"Act 1 timer begins after countdown");
+        var music=Object.FindFirstObjectByType<CircusMusic>();
+        Check(music && music.CombatVolume>0 && music.BossVolume==0,"Ordinary combat music fades in during Act 1");
+        var musicSettings=new SerializedObject(music);var musicGain=musicSettings.FindProperty("musicVolume");float savedGain=musicGain.floatValue;
+        musicGain.floatValue=0;musicSettings.ApplyModifiedPropertiesWithoutUndo();yield return null;
+        Check(music.CombatVolume==0 && music.BossVolume==0,"Setting music volume to zero actually mutes music");
+        musicGain.floatValue=savedGain;musicSettings.ApplyModifiedPropertiesWithoutUndo();
         start=player.transform.position; InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W));
         yield return new WaitForSeconds(.35f); InputSystem.QueueStateEvent(keyboard,new KeyboardState()); yield return null;
         Check(Vector3.Distance(start,player.transform.position)>1,"Existing camera-relative movement works");
@@ -66,7 +75,7 @@ public static class CircusThreeActVerification
         if(target)
         {
             target.transform.position=player.transform.position+rig.AimForward*2; Physics.SyncTransforms(); hp=target.Health;
-            Check(player.Attack() && player.MeleeArea.Visible,"Melee exposes gold sector before damage");
+            Check(player.Attack() && !player.MeleeArea.Visible,"Melee hides floor sector before damage");
             yield return new WaitForSeconds(.08f); Check(target.Health==hp,"Melee respects preparation delay");
             yield return new WaitForSeconds(.2f); Check(!target || target.Health<hp,"Melee hits after preparation");
             if(target) Object.Destroy(target.gameObject);
@@ -99,7 +108,7 @@ public static class CircusThreeActVerification
         deadline=Time.realtimeSinceStartup+10;
         while(!session.Boss && Time.realtimeSinceStartup<deadline) yield return null;
         var boss=session.Boss;
-        Check(session.Round==3 && boss && session.Enemies.Count==1 && boss.MaxHealth==650,"Act 3 spawns exactly one high-health boss");
+        Check(session.Round==3 && boss && session.Enemies.Count==1 && boss.MaxHealth==900,"Act 3 spawns exactly one high-health boss");
         if(boss)
         {
             Check(session.State==ShowState.BossIntro && !player.Fire() && !player.Attack(),"Boss entrance blocks both player attacks");
@@ -107,11 +116,12 @@ public static class CircusThreeActVerification
             var introPosition=boss.transform.position;
             yield return new WaitForSeconds(1);
             Check(boss.Health==introHp && boss.transform.position==introPosition && session.GameplaySeconds==introTime,"Boss entrance freezes combat and gameplay timer");
+            Check(music && music.BossVolume==0 && music.CombatVolume<.01f,"Boss entrance remains quiet through falling and landing");
             session.Pause();yield return new WaitForSecondsRealtime(.2f);session.Resume();
             Check(session.State==ShowState.BossIntro,"Pause resumes boss entrance state");
             while(!session.IsRunning)yield return null;
             var ai=boss.GetComponent<CircusBoss>();
-            Move(player,new Vector3(0,.06f,0)); player.RestoreHealth(100);
+            Move(player,boss.transform.position+Vector3.back*8); player.RestoreHealth(100);
             deadline=Time.realtimeSinceStartup+8; bool warning=false;
             while(ai.RangedAttacks==0 && Time.realtimeSinceStartup<deadline)
             { warning|=ai.Action==BossAction.RangedWindup; yield return null; }
@@ -138,8 +148,13 @@ public static class CircusThreeActVerification
             boss.TakeDamage(25); yield return null;
             var fill=hudSo.FindProperty("bossHealthFill").objectReferenceValue as UnityEngine.UI.Image;
             Check(Mathf.Abs(fill.fillAmount-boss.Health/boss.MaxHealth)<.01f,"Boss health UI tracks actual damage");
+            boss.TakeDamage(boss.Health-boss.MaxHealth*.3f);yield return new WaitForSeconds(1.6f);
+            Check(boss.GetComponent<CircusBoss>().Phase==3 && music.PercussionVolume>0,"Final phase adds synchronized percussion layer");
             boss.TakeDamage(10000); yield return new WaitForSeconds(.2f);
+            Check(session.State==ShowState.BossDefeated && !player.Attack() && !player.Fire(),"Boss death animation stops combat before clear UI");
+            yield return new WaitForSeconds(1.6f);
             Check(session.State==ShowState.Victory && session.Score==3400,"Boss death completes Act 3 and clear score");
+            Check(music.BossVolume<.01f && music.PercussionVolume<.01f,"Boss death fades out music before victory");
         }
         session.BeginShow(); yield return null;
         Check(session.State==ShowState.Countdown && session.Alive==0 && !session.Boss && player.Health==100 && session.Round==1,"Retry resets boss and begins new countdown");
@@ -149,5 +164,6 @@ public static class CircusThreeActVerification
         InputSystem.RemoveDevice(keyboard); InputSystem.RemoveDevice(mouse);
         InputSystem.settings.backgroundBehavior=oldBackground; InputSystem.settings.editorInputBehaviorInPlayMode=oldEditor;
         report.Add(report.Any(s=>s.StartsWith("FAIL")) ? "RESULT: FAILED" : "RESULT: ALL PASSED"); File.WriteAllLines(Report,report);
+        running=false;
     }
 }

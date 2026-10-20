@@ -21,7 +21,10 @@ namespace CircusPrototype
         readonly System.Collections.Generic.List<Material> flashMaterials=new System.Collections.Generic.List<Material>();
         float spawnUntil, flashUntil;
         bool wasFlashing;
-        Vector3 shotDirection;
+        Vector3 shotDirection,modelRest,attackFacing;
+        [SerializeField] float rangedLean=10,rangedPullback=.1f,rangedRecoil=.07f,rangedRecovery=.24f;
+        float recoilStart=-100;
+        public bool Winding=>winding;
         float nextAttack, maxHealth, verticalSpeed, windupUntil;
         bool dead, winding;
         public bool IsRanged=>ranged;
@@ -34,7 +37,7 @@ namespace CircusPrototype
         public bool Flashing=>Time.time<flashUntil;
         public void Bind(CircusSession value, float healthMultiplier=1, float intervalMultiplier=1)
         {
-            session=value; controller=GetComponent<CharacterController>();
+            session=value; modelRest=model.localPosition;controller=GetComponent<CharacterController>();
             health*=healthMultiplier; maxHealth=health; attackInterval*=intervalMultiplier;
             nextAttack=Time.time+Random.Range(1.5f,2.5f);
             area=CircusAttackArea.Create("Enemy melee warning",transform);
@@ -52,7 +55,7 @@ namespace CircusPrototype
                 }
                 if(changed)renderer.sharedMaterials=materials;
             }
-            if(ranged && !IsBoss) charge=CircusCharge.Create(transform,Vector3.up*1.3f);
+            if(ranged && !IsBoss) charge=CircusCharge.Create(transform,Vector3.up*1.65f,true);
             if(warning) warning.enabled=false;
             if(IsBoss) GetComponent<CircusBoss>().Bind(session,this);
         }
@@ -82,13 +85,19 @@ namespace CircusPrototype
             if(winding)
             {
                 if(!ranged) area.Show(area.transform.position-Vector3.up*.09f,area.transform.forward,meleeRange,180,new Color(1,.13f,.08f,.25f+.25f*(1-(windupUntil-Time.time)/windupSeconds)));
+                if(ranged) {
+                    float t=Mathf.Clamp01(1-(windupUntil-Time.time)/Mathf.Max(.01f,windupSeconds));
+                    model.rotation=Quaternion.LookRotation(attackFacing)*Quaternion.Euler(-rangedLean*t,0,0);
+                    model.localPosition=modelRest+transform.InverseTransformDirection(attackFacing)*(-rangedPullback*t);
+                    if(charge)charge.Show(t);
+                }
                 if(Time.time<windupUntil) return;
                 winding=false; nextAttack=Time.time+attackInterval;
                 if(ranged)
                 {
                     var origin=charge ? charge.transform.position : transform.position+Vector3.up*1.1f;
                     var shot=Instantiate(projectile,origin,Quaternion.identity);
-                    shot.Launch(shotDirection,session);
+                    shot.Launch(shotDirection,session);recoilStart=Time.time;
                     if(charge) charge.Hide();
                     CircusAudio.Play(CircusCue.FlameLaunch,origin);
                 }
@@ -114,40 +123,49 @@ namespace CircusPrototype
             }
             if(model && direction.sqrMagnitude>.001f) model.rotation=Quaternion.LookRotation(direction);
             if(Time.time<nextAttack || (!ranged && direction.magnitude>meleeRange)) return;
-            winding=true; windupUntil=Time.time+windupSeconds;
+            winding=true; windupUntil=Time.time+windupSeconds;attackFacing=direction.sqrMagnitude>.001f?direction.normalized:model.forward;
             if(ranged)
             {
-                if(charge) { charge.transform.position=transform.position+Vector3.up*1.3f+model.forward*.85f;charge.Show(.4f); }
+                if(charge) { charge.transform.position=transform.position+Vector3.up*1.65f+model.forward*.85f;charge.Show(.4f); }
                 var origin=charge ? charge.transform.position : transform.position+Vector3.up*1.1f;
                 shotDirection=(session.Player.transform.position+Vector3.up-origin).normalized;
                 CircusAudio.Play(CircusCue.MagicCharge,transform.position,.25f);
                 CircusAudio.Play(CircusCue.Warning,transform.position,.3f);
             }
             if(!ranged) area.Show(transform.position,direction,meleeRange,180,new Color(1,.16f,.08f,.25f));
-            if(ranged && warning) { warning.enabled=true; warning.SetPosition(0,transform.position+Vector3.up*.2f); warning.SetPosition(1,session.Player.transform.position+Vector3.up*.2f); }
+            if(ranged && warning) warning.enabled=false;
         }
         public void TakeDamage(float damage)
         {
             if(dead || Spawning || !session || !session.IsRunning || damage<=0) return;
+            var boss=GetComponent<CircusBoss>();
+            if(boss && boss.IsInvulnerable)return;
             health=Mathf.Max(0,health-damage);
             flashUntil=Time.time+.1f;
             CircusImpact.Create(transform.position+Vector3.up*1.1f,new Color(1,.8f,.35f));
             if(healthFill) healthFill.fillAmount=health/maxHealth;
             CircusAudio.Play(IsBoss ? CircusCue.BossHit : CircusCue.EnemyHit,transform.position,.7f);
             if(health>0) return;
-            dead=true; CircusAudio.Play(IsBoss ? CircusCue.BossDeath : CircusCue.EnemyDeath,transform.position);
-            session.EnemyDefeated(this); Destroy(gameObject);
+            dead=true;session.EnemyDefeated(this);
+            if(boss) { boss.BeginDeath();return; }
+            CircusAudio.Play(CircusCue.EnemyDeath,transform.position);Destroy(gameObject);
         }
         void LateUpdate()
         {
             if(healthCanvas && Camera.main) healthCanvas.transform.rotation=Camera.main.transform.rotation;
+            if(ranged && !IsBoss && !winding && session && session.IsRunning) {
+                float t=Mathf.Clamp01((Time.time-recoilStart)/Mathf.Max(.01f,rangedRecovery));
+                float kick=t<.2f?Mathf.Lerp(-rangedPullback,rangedRecoil,t/.2f):Mathf.Lerp(rangedRecoil,0,Mathf.SmoothStep(0,1,(t-.2f)/.8f));
+                model.localPosition=modelRest+transform.InverseTransformDirection(attackFacing)*kick;
+                if(t<1)model.rotation=Quaternion.LookRotation(attackFacing)*Quaternion.Euler(Mathf.Sin(t*Mathf.PI)*6,0,0);
+            }
             bool flashing=Flashing;
             if(modelRenderers!=null && (flashing || wasFlashing))
                 foreach(var renderer in modelRenderers)
                 {
                     if(!renderer) continue;
                     renderer.GetPropertyBlock(flashBlock);
-                    flashBlock.SetColor("_EmissionColor",flashing ? new Color(2,1.5f,.5f) : Color.black);
+                    flashBlock.SetColor("_EmissionColor",flashing ? new Color(.65f,.5f,.25f) : Color.black);
                     if(renderer.sharedMaterial && renderer.sharedMaterial.HasProperty("_BaseColor"))
                         flashBlock.SetColor("_BaseColor",flashing ? new Color(1,.95f,.65f) : renderer.sharedMaterial.GetColor("_BaseColor"));
                     renderer.SetPropertyBlock(flashBlock);
