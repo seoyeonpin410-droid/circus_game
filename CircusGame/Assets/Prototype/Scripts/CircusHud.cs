@@ -93,5 +93,34 @@ namespace CircusPrototype
             pause.SetActive(session.State == ShowState.Paused);
             ending.SetActive(session.State == ShowState.Victory || session.State == ShowState.Defeat);
         }
+        void OnGUI()
+        {
+            if (!session || session.State != ShowState.Countdown)
+                return;
+
+            float width = 300f;
+            float height = 240f;
+
+            GUIStyle style = new GUIStyle(GUI.skin.label);
+            style.fontSize = 150;
+            style.fontStyle = FontStyle.Bold;
+            style.alignment = TextAnchor.MiddleCenter;
+            style.normal.textColor = Color.white;
+
+            GUI.Label(
+                new Rect(
+                    (Screen.width - width) / 2f,
+                    (Screen.height - height) / 2f,
+                    width,
+                    height
+                ),
+                session.CountdownNumber.ToString(),
+                style
+            );
+        }
     }
+
+
 }
+
+

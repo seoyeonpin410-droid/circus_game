@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace CircusPrototype
 {
-    public enum ShowState { Menu, Playing, Intermission, Paused, Victory, Defeat }
+    public enum ShowState { Menu, Countdown, Playing, Intermission, Paused, Victory, Defeat }
 
     public sealed class CircusSession : MonoBehaviour
     {
@@ -24,6 +24,7 @@ namespace CircusPrototype
         int score;
         bool infected;
         public ShowState State { get; private set; } = ShowState.Menu;
+        public int CountdownNumber { get; private set; }
         public CircusPlayer Player => player;
         public IReadOnlyList<CircusEnemy> Enemies => enemies;
         public int Round => round + 1;
@@ -55,12 +56,32 @@ namespace CircusPrototype
         public void BeginShow()
         {
             ClearShow();
+
             round = score = spawned = defeated = 0;
             infected = false;
+
             player.ResetPerformer();
-            State = ShowState.Playing;
             hud.CloseSettings();
+
+            State = ShowState.Countdown;
+            CountdownNumber = 3;
+
+            roundRoutine = StartCoroutine(StartCountdown());
+        }
+
+        IEnumerator StartCountdown()
+        {
+            for (int i = 3; i >= 1; i--)
+            {
+                CountdownNumber = i;
+                yield return new WaitForSeconds(1f);
+            }
+
+            CountdownNumber = 0;
+            State = ShowState.Playing;
+
             hud.Announce("제1막 · 무대 위의 랑", 3);
+
             roundRoutine = StartCoroutine(RunRound());
         }
 
