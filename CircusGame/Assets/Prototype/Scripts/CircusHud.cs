@@ -34,6 +34,7 @@ namespace CircusPrototype
         [SerializeField] Button retryButton;
         [SerializeField] Button endingMenuButton;
         [SerializeField] TextMeshProUGUI countdownText;
+        [SerializeField] TextMeshProUGUI volumeValueText;
         [SerializeField] GameObject countdownPanel;
         [SerializeField] GameObject bossPanel;
         [SerializeField] Image bossHealthFill;
@@ -60,6 +61,8 @@ namespace CircusPrototype
             fullscreenToggle.SetIsOnWithoutNotify(Screen.fullScreen);
             fullscreenToggle.onValueChanged.AddListener(v => { Screen.fullScreen = v; });
             initialized = true;
+            foreach (var button in GetComponentsInChildren<UnityEngine.UI.Button>(true))
+                button.onClick.AddListener(() => CircusAudio.Play(CircusCue.UIClick));
             RefreshPanels();
         }
         public void CloseSettings() { settingsOpen = false; if (initialized) RefreshPanels(); }
@@ -73,6 +76,7 @@ namespace CircusPrototype
             if (!initialized) return;
             RefreshPanels();
             var hp = session.Player.Health;
+            if (volumeValueText) volumeValueText.text = $"{Mathf.RoundToInt(volumeSlider.value * 100)}%";
             healthFill.fillAmount = hp / 100;
             healthFill.color = session.Infected ? new Color(.35f, .8f, .43f) : new Color(.78f, .18f, .23f);
             healthText.text = $"{(session.Infected ? "감염" : "체력")}  {Mathf.CeilToInt(hp)} / 100";

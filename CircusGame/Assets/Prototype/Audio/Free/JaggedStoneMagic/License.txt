@@ -1,0 +1,8 @@
+Magic Spell SFX
+Author: JaggedStone
+Source: https://opengameart.org/content/magic-spell-sfx
+License: CC0 1.0 Universal
+License link: https://creativecommons.org/publicdomain/zero/1.0/
+The author lists CC0 and "None needed" in the attribution notice.
+Downloaded 2026-10-20. Original files renamed only for consistent numbering.
+magical_1 uses magical_1_0.ogg, magical_6 uses magical_6_0.ogg, magical_7 uses magical_7_0.ogg.

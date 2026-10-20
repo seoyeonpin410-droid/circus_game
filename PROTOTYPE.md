@@ -1,3 +1,5 @@
+> UI 여백 수정과 무료 CC0 효과음 20종 개선 사항은 [POLISH_UPDATE.md](POLISH_UPDATE.md)를 확인하세요.
+
 > 2026-10-20: 최신 팀 버전 기반의 3막·보스전·사운드 확장이 적용되었습니다.
 > 현재 동작·파일 목록·Inspector·검증 안내는 [THREE_ACT_UPDATE.md](THREE_ACT_UPDATE.md)를 확인하세요.
 
