@@ -1,3 +1,9 @@
+# 최신 전투 개선
+
+최신 변경과 사운드 연결은 [COMBAT_POLISH_UPDATE.md](COMBAT_POLISH_UPDATE.md)가 기준입니다. 아래는 초기 3막 구현 기록입니다.
+
+> 현재 사운드는 이전 합성음 19종으로 되돌렸으며 보스 장판 패턴을 추가했습니다. [GROUND_PATTERN_UPDATE.md](GROUND_PATTERN_UPDATE.md)를 확인하세요.
+
 > UI 여백 수정과 무료 CC0 효과음 20종 개선 사항은 [POLISH_UPDATE.md](POLISH_UPDATE.md)를 확인하세요.
 
 # 3막 보스전 확장 안내

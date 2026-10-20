@@ -7,7 +7,7 @@ namespace CircusPrototype
         public static void Create(Vector3 point,Color color)
         {
             var go=GameObject.CreatePrimitive(PrimitiveType.Sphere); go.name="Dokkaebi flame impact";
-            Destroy(go.GetComponent<Collider>()); go.transform.position=point;
+            var collider=go.GetComponent<Collider>();collider.enabled=false;Destroy(collider); go.transform.position=point;
             var renderer=go.GetComponent<Renderer>();
             var material=new Material(Shader.Find("Universal Render Pipeline/Unlit")); material.SetColor("_BaseColor",color);
             renderer.sharedMaterial=material; renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;

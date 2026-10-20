@@ -80,7 +80,7 @@ public static class CircusThreeActVerification
         int firstCount=0; float deadline=Time.realtimeSinceStartup+30;
         while(session.Round==1 && session.State!=ShowState.Intermission && Time.realtimeSinceStartup<deadline)
         {
-            foreach(var enemy in session.Enemies.ToArray()) { Check(enemy.MaxHealth==50,"Act 1 base enemy health"); firstCount++; enemy.TakeDamage(10000); }
+            foreach(var enemy in session.Enemies.ToArray()) { if(enemy.Spawning)continue; Check(enemy.MaxHealth==50,"Act 1 base enemy health"); firstCount++; enemy.TakeDamage(10000); }
             player.RestoreHealth(100); yield return new WaitForSeconds(.1f);
         }
         Check(firstCount==8 && session.State==ShowState.Intermission,"Eight Act 1 enemies lead to intermission");
@@ -92,7 +92,7 @@ public static class CircusThreeActVerification
         while(session.Round==2 && session.State!=ShowState.Intermission && Time.realtimeSinceStartup<deadline)
         {
             foreach(var enemy in session.Enemies.ToArray())
-            { sawRanged|=enemy.IsRanged; Check(enemy.MaxHealth==70,"Act 2 increases enemy health"); secondCount++; enemy.TakeDamage(10000); }
+            { if(enemy.Spawning)continue; sawRanged|=enemy.IsRanged; Check(enemy.MaxHealth==70,"Act 2 increases enemy health"); secondCount++; enemy.TakeDamage(10000); }
             player.RestoreHealth(100); yield return new WaitForSeconds(.1f);
         }
         Check(secondCount==12 && sawRanged,"Act 2 has twelve enemies including ranged type");
@@ -102,6 +102,14 @@ public static class CircusThreeActVerification
         Check(session.Round==3 && boss && session.Enemies.Count==1 && boss.MaxHealth==650,"Act 3 spawns exactly one high-health boss");
         if(boss)
         {
+            Check(session.State==ShowState.BossIntro && !player.Fire() && !player.Attack(),"Boss entrance blocks both player attacks");
+            float introHp=boss.Health;boss.TakeDamage(25);float introTime=session.GameplaySeconds;
+            var introPosition=boss.transform.position;
+            yield return new WaitForSeconds(1);
+            Check(boss.Health==introHp && boss.transform.position==introPosition && session.GameplaySeconds==introTime,"Boss entrance freezes combat and gameplay timer");
+            session.Pause();yield return new WaitForSecondsRealtime(.2f);session.Resume();
+            Check(session.State==ShowState.BossIntro,"Pause resumes boss entrance state");
+            while(!session.IsRunning)yield return null;
             var ai=boss.GetComponent<CircusBoss>();
             Move(player,new Vector3(0,.06f,0)); player.RestoreHealth(100);
             deadline=Time.realtimeSinceStartup+8; bool warning=false;
@@ -118,14 +126,14 @@ public static class CircusThreeActVerification
             Check(ai.AttackArea.Visible,"Boss melee displays danger sector before hit");
             float before=player.Health;
             Move(player,boss.transform.position+ai.AttackArea.transform.forward*4.4f);
-            int previous=ai.MeleeAttacks; yield return new WaitForSeconds(.65f);
+            int previous=ai.MeleeAttacks; yield return new WaitForSeconds(.8f);
             Check(ai.MeleeAttacks>previous && player.Health==before,"Leaving boss sector avoids melee damage");
             Move(player,boss.transform.position+Vector3.back*2.6f);
             deadline=Time.realtimeSinceStartup+8;
             while(ai.Action!=BossAction.MeleeWindup && Time.realtimeSinceStartup<deadline) yield return null;
             session.Pause(); var action=ai.Action; yield return new WaitForSecondsRealtime(.25f);
             Check(ai.Action==action,"Pause freezes boss windup"); session.Resume();
-            player.RestoreHealth(100); yield return new WaitForSeconds(.6f);
+            player.RestoreHealth(100); yield return new WaitForSeconds(.8f);
             Check(player.Health<100,"Standing in boss sector receives melee damage");
             boss.TakeDamage(25); yield return null;
             var fill=hudSo.FindProperty("bossHealthFill").objectReferenceValue as UnityEngine.UI.Image;

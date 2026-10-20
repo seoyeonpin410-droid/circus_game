@@ -6236,46 +6236,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusAudio
   clips:
-  - {fileID: 8300000, guid: 02708d986a9b0814394f0fb2c8b6d6da, type: 3}
-  - {fileID: 8300000, guid: cd4f6fa72f8ea2c4abf3fad7f382de7d, type: 3}
-  - {fileID: 8300000, guid: 4d1f4aea311f953478c97d8d384a2bfb, type: 3}
-  - {fileID: 8300000, guid: 596b8f9cec1f1e74a8cb6155c9077528, type: 3}
-  - {fileID: 8300000, guid: 3abe1ef409afd8640ba4ec4a14cc7827, type: 3}
-  - {fileID: 8300000, guid: 1e12c8b622552904c8b6eb9cc3930b4d, type: 3}
-  - {fileID: 8300000, guid: 4afcd44b57a8f784594f5246c6eb0dd7, type: 3}
-  - {fileID: 8300000, guid: 4914a1a81ed1639428f16d92d9265f9e, type: 3}
-  - {fileID: 8300000, guid: fe2950fbafe186a4599ec75a4809bda2, type: 3}
-  - {fileID: 8300000, guid: c3498361684ab05419d3417dbee1d857, type: 3}
-  - {fileID: 8300000, guid: e88616c271a8cd6458a942ce2f565979, type: 3}
-  - {fileID: 8300000, guid: 59d47ccc4cff51540b1beaec8cd427b3, type: 3}
-  - {fileID: 8300000, guid: 077277bca7da5de4e971567af6ad8280, type: 3}
-  - {fileID: 8300000, guid: ee9d921ad1f7e574a98da333b0231b9a, type: 3}
-  - {fileID: 8300000, guid: feb92604a82ccdc499dde2d89d8788f0, type: 3}
-  - {fileID: 8300000, guid: 2c45623e1503c7a47b08224b6a9848b9, type: 3}
-  - {fileID: 8300000, guid: 1b059f87a0e6ff042a7da50b6e2935da, type: 3}
-  - {fileID: 8300000, guid: d513a0882c78c2d40b34ed548128720b, type: 3}
-  - {fileID: 8300000, guid: 7b51be1660b29424bba75027b3d0f53a, type: 3}
-  - {fileID: 8300000, guid: 3963b92fc69631a46b0125daa7229bde, type: 3}
+  - {fileID: 8300000, guid: 1b21e1a79748d494b8685ac73bd700ca, type: 3}
+  - {fileID: 8300000, guid: 369445295aedaa54898567c3d2cb1b13, type: 3}
+  - {fileID: 8300000, guid: 87f64fd2b3706c84b8e4475cba93a4d1, type: 3}
+  - {fileID: 8300000, guid: bd7462afec62aa944b963880ce06aab3, type: 3}
+  - {fileID: 8300000, guid: dd0b05c1de2ddca40bfb534dff7b0b59, type: 3}
+  - {fileID: 8300000, guid: 66b1eb63c17f06642acd276a3f1e6631, type: 3}
+  - {fileID: 8300000, guid: 5ad99c305e07f234b94adc6cfbb7eb63, type: 3}
+  - {fileID: 8300000, guid: 835e20f94297bf0418f58d63d794d547, type: 3}
+  - {fileID: 8300000, guid: 5a47c0fd110bb5d4abf8c96fc7fef8e7, type: 3}
+  - {fileID: 8300000, guid: 4d0fb066565ae204abe24c925e4dee75, type: 3}
+  - {fileID: 8300000, guid: 222c4c2b705ef074bab3599408504199, type: 3}
+  - {fileID: 8300000, guid: ac459771dd0693349989f539ce2ef218, type: 3}
+  - {fileID: 8300000, guid: d974c6d35e87df74f917c8dc4938c1bc, type: 3}
+  - {fileID: 8300000, guid: 95e678571e72abb4aa1fda3b82f6227d, type: 3}
+  - {fileID: 8300000, guid: a59131dd2f4952344b0e96d5b7701863, type: 3}
+  - {fileID: 0}
+  - {fileID: 8300000, guid: fc8d0ee42607b3847ae97243b5576bb1, type: 3}
+  - {fileID: 8300000, guid: 230768d14a29753439cbc8d8cab16f82, type: 3}
+  - {fileID: 8300000, guid: 2ad976b43b18cdd4caaa1c62e1e3ca71, type: 3}
+  - {fileID: 8300000, guid: aef1ecff9d253f743a5565ac871f1267, type: 3}
+  - {fileID: 8300000, guid: 2cc1dc651f146b84db5e8b94dc286124, type: 3}
+  - {fileID: 8300000, guid: 61d10c80d0eeaaa45bb501fe9219a9f7, type: 3}
+  - {fileID: 8300000, guid: 7ff9155537c65ef48884a8e9e29bb9fe, type: 3}
   cueVolumes:
-  - 0.7
-  - 0.8
-  - 0.8
-  - 0.9
-  - 0.85
-  - 0.6
-  - 0.7
-  - 0.75
-  - 0.55
-  - 0.6
-  - 0.8
-  - 0.9
-  - 0.7
-  - 0.55
-  - 0.85
   - 0.25
+  - 0.35
+  - 0.3
+  - 0.45
   - 0.6
-  - 0.6
+  - 0.45
+  - 0.85
   - 0.65
+  - 0.3
+  - 0.35
+  - 0.55
+  - 0.85
+  - 0.8
+  - 0.4
+  - 0.85
+  - 0
+  - 0.4
+  - 0.15
+  - 0.5
+  - 0.2
+  - 0.5
+  - 0.3
   - 0.55
   effectsVolume: 0.55
   maxVoices: 12

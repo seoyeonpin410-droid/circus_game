@@ -18,6 +18,9 @@ namespace CircusPrototype
         float yaw;
         float pitch = 15;
         bool activeView;
+        float shakeUntil, shakeStrength;
+        public void Shake(float strength=.035f,float seconds=.12f)
+        { shakeStrength=Mathf.Clamp(strength,0,.05f);shakeUntil=Time.time+seconds; }
         public bool FirstPerson { get; private set; }
         public Vector3 AimForward => Quaternion.Euler(0, yaw, 0) * Vector3.forward;
         void Awake()
@@ -66,6 +69,8 @@ namespace CircusPrototype
                 out var hit, thirdPersonDistance, obstructionMask, QueryTriggerInteraction.Ignore))
                 desired = eye + (desired - eye).normalized * Mathf.Max(.25f, hit.distance - .1f);
             transform.SetPositionAndRotation(desired, rotation);
+            if(session.IsRunning && Time.time<shakeUntil)
+                transform.position+=rotation*new Vector3(Mathf.Sin(Time.time*83),Mathf.Sin(Time.time*97),0)*shakeStrength;
             if (firstPersonBell) firstPersonBell.localRotation = Quaternion.Euler(0, 180, player.AttackSwing * -45);
         }
         void OnDisable()

@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace CircusPrototype
 {
-    public enum CircusCue { Countdown, Start, ActChange, Clear, PlayerMelee, PlayerShot, PlayerHit, PlayerDeath, EnemyHit, EnemyDeath, BossArrival, BossMelee, BossShot, BossHit, BossDeath, FlameFlight, FlameImpact, Warning, FlameLaunch, UIClick }
+    public enum CircusCue { Countdown, Start, ActChange, Clear, PlayerMelee, PlayerShot, PlayerHit, PlayerDeath, EnemyHit, EnemyDeath, BossArrival, BossMelee, BossShot, BossHit, BossDeath, FlameFlight, FlameImpact, Warning, FlameLaunch, UIClick, EnemyMelee, MagicCharge, PhaseShift }
     public sealed class CircusAudio : MonoBehaviour
     {
         [SerializeField] AudioClip[] clips;
@@ -31,7 +31,10 @@ namespace CircusPrototype
             if (!instance || instance.clips==null) return;
             int index=(int)cue;
             if(index>=instance.clips.Length || !instance.clips[index] || Time.unscaledTime<instance.nextCue[index]) return;
-            instance.nextCue[index]=Time.unscaledTime+instance.minRepeatSeconds;
+            instance.nextCue[index]=Time.unscaledTime+((cue==CircusCue.EnemyHit || cue==CircusCue.FlameImpact) ? .12f : instance.minRepeatSeconds);
+            int overlapping=0;
+            foreach(var playing in instance.voices) if(playing.isPlaying && playing.clip==instance.clips[index]) overlapping++;
+            if(overlapping>=2) return;
             foreach(var voice in instance.voices)
             {
                 if(voice.isPlaying) continue;
@@ -39,8 +42,7 @@ namespace CircusPrototype
                 voice.spatialBlend=position.HasValue ? .35f : 0;
                 float cueGain=instance.cueVolumes!=null && index<instance.cueVolumes.Length ? instance.cueVolumes[index] : 1;
                 voice.volume=instance.effectsVolume*Mathf.Clamp01(gain)*cueGain;
-                bool combat=cue==CircusCue.PlayerMelee || cue==CircusCue.PlayerShot || cue==CircusCue.EnemyHit || cue==CircusCue.BossHit;
-                voice.pitch=combat ? UnityEngine.Random.Range(.96f,1.04f) : cue==CircusCue.BossMelee ? .8f : 1;
+                voice.pitch=1;
                 voice.clip=instance.clips[index]; voice.Play(); return;
             }
         }
@@ -51,7 +53,8 @@ namespace CircusPrototype
             {
                 if(voice.isPlaying) continue;
                 voice.transform.position=position; voice.spatialBlend=.6f;
-                voice.volume=instance.effectsVolume*.16f; voice.clip=instance.clips[(int)CircusCue.FlameFlight]; voice.Play(); return voice;
+                if(!instance.clips[(int)CircusCue.FlameFlight]) return null;
+                voice.volume=instance.effectsVolume*.06f; voice.clip=instance.clips[(int)CircusCue.FlameFlight]; voice.Play(); return voice;
             }
             return null;
         }

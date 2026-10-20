@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace CircusPrototype
 {
-    public enum ShowState { Menu, Countdown, Playing, Intermission, Paused, Victory, Defeat }
+    public enum ShowState { Menu, Countdown, Playing, Intermission, Paused, Victory, Defeat, BossIntro }
     public sealed class CircusSession : MonoBehaviour
     {
         [SerializeField] CircusPlayer player;
@@ -29,7 +29,7 @@ namespace CircusPrototype
         public int Score => score;
         public bool Infected => infected;
         public bool IsRunning => State == ShowState.Playing;
-        public bool CanPause => IsRunning || State == ShowState.Countdown || State == ShowState.Intermission;
+        public bool CanPause => IsRunning || State == ShowState.Countdown || State == ShowState.Intermission || State == ShowState.BossIntro;
         public bool HasGameplayView => CanPause || State == ShowState.Paused;
         public float GameplaySeconds { get; private set; }
         public int CountdownNumber => Mathf.CeilToInt(CountdownRemaining);
@@ -78,8 +78,12 @@ namespace CircusPrototype
                 }
                 else
                 {
+                    State = ShowState.BossIntro;
                     Boss = Instantiate(bossPrefab, FarthestSpawn().position, Quaternion.identity);
                     Boss.Bind(this); enemies.Add(Boss); spawned = 1; CircusAudio.Play(CircusCue.BossArrival);
+                    hud.Announce("3막 - BOSS · 도깨비 대장", 2.5f);
+                    yield return new WaitForSeconds(2.5f);
+                    State = ShowState.Playing;
                     while (Boss && Boss.Health > 0) yield return null;
                     break;
                 }
@@ -115,6 +119,7 @@ namespace CircusPrototype
             var prefab = round > 0 && spawned % 3 == 1 ? rangedEnemy : closeEnemy;
             var instance = Instantiate(prefab, candidates[Random.Range(0, candidates.Count)].position, Quaternion.identity);
             instance.Bind(this, round == 0 ? 1 : 1.4f, round == 0 ? 1 : .8f);
+            instance.PrepareSpawn(.5f);
             enemies.Add(instance); spawned++; return instance;
         }
         public void EnemyDefeated(CircusEnemy enemy)

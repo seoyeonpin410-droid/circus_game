@@ -99,7 +99,9 @@ namespace CircusPrototype
                 if (showBoss)
                 {
                     bossHealthFill.fillAmount = session.Boss.Health / session.Boss.MaxHealth;
-                    bossHealthText.text = $"도깨비 대장  {Mathf.CeilToInt(session.Boss.Health)} / {session.Boss.MaxHealth:0}";
+                    int phase=session.Boss.GetComponent<CircusBoss>().Phase;
+                    bossHealthText.text = $"도깨비 대장 · {phase}페이즈  {Mathf.CeilToInt(session.Boss.Health)} / {session.Boss.MaxHealth:0}";
+                    bossHealthFill.color=phase==2 ? new Color(.85f,.28f,.18f) : new Color(.08f,.68f,.48f);
                 }
             }
             bool victory = session.State == ShowState.Victory;

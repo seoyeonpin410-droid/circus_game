@@ -150,10 +150,12 @@ public static class CircusThreeActSetup
         var session=Object.FindFirstObjectByType<CircusSession>();
         var audio=session.GetComponent<CircusAudio>(); if(!audio) audio=session.gameObject.AddComponent<CircusAudio>();
         var so=new SerializedObject(audio); var clips=so.FindProperty("clips");
-        var names=System.Enum.GetNames(typeof(CircusCue)); clips.arraySize=names.Length;
-        for(int i=0;i<names.Length;i++) clips.GetArrayElementAtIndex(i).objectReferenceValue=AssetDatabase.LoadAssetAtPath<AudioClip>(Root+"Audio/Polished/"+names[i]+".wav") ?? AssetDatabase.LoadAssetAtPath<AudioClip>(Root+"Audio/Generated/"+names[i]+".wav");
+        var names=System.Enum.GetNames(typeof(CircusCue)); clips.arraySize=(int)CircusCue.UIClick;
+        for(int i=0;i<clips.arraySize;i++) clips.GetArrayElementAtIndex(i).objectReferenceValue=AssetDatabase.LoadAssetAtPath<AudioClip>(Root+"Audio/Generated/"+names[i]+".wav");
+        var gains=so.FindProperty("cueVolumes"); gains.arraySize=clips.arraySize;
+        for(int i=0;i<gains.arraySize;i++) gains.GetArrayElementAtIndex(i).floatValue=1;
         so.ApplyModifiedPropertiesWithoutUndo();
         EditorSceneManager.MarkSceneDirty(session.gameObject.scene); EditorSceneManager.SaveOpenScenes(); AssetDatabase.SaveAssets();
-        return "Audio bank connected: "+names.Length;
+        return "Original generated audio bank restored: "+clips.arraySize;
     }
 }

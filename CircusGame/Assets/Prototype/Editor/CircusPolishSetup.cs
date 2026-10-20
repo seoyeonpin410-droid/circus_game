@@ -58,7 +58,7 @@ public static class CircusPolishSetup
         var map=new[]{"KenneyInterface/glass_002","KenneyInterface/confirmation_001","JaggedStoneMagic/magical_2","JaggedStoneMagic/magical_7","KenneyRPG/knifeSlice","JaggedStoneMagic/magical_1","KenneyRPG/chop","KenneyRPG/creak1","KenneyRPG/knifeSlice2","KenneyRPG/dropLeather","JaggedStoneMagic/magical_4","KenneyRPG/chop","JaggedStoneMagic/magical_5","KenneyRPG/metalPot1","JaggedStoneMagic/magical_6","","KenneyInterface/glass_001","KenneyInterface/bong_001","JaggedStoneMagic/magical_3","KenneyInterface/click_001"};
         float[] lengths={.2f,.5f,1,1.8f,.35f,.55f,.22f,.8f,.2f,.5f,1.5f,.6f,.8f,.3f,1.8f,.65f,.4f,.4f,.55f,.15f};
         var names=Enum.GetNames(typeof(CircusCue));
-        for(int i=0;i<names.Length;i++)
+        for(int i=0;i<map.Length;i++)
         {
             string source=map[i].Length>0 ? free+map[i]+".ogg" : Root+"Audio/Generated/FlameFlight.wav";
             var importer=AssetImporter.GetAtPath(source) as AudioImporter;
@@ -80,9 +80,9 @@ public static class CircusPolishSetup
     }
     public static string BindSounds()
     {
-        var audio=UnityEngine.Object.FindFirstObjectByType<CircusAudio>();var so=new SerializedObject(audio);var clips=so.FindProperty("clips");var names=Enum.GetNames(typeof(CircusCue));clips.arraySize=names.Length;
-        float[] volumes={.7f,.8f,.8f,.9f,.85f,.6f,.7f,.75f,.55f,.6f,.8f,.9f,.7f,.55f,.85f,.25f,.6f,.6f,.65f,.55f};var gains=so.FindProperty("cueVolumes");gains.arraySize=names.Length;
-        for(int i=0;i<names.Length;i++){clips.GetArrayElementAtIndex(i).objectReferenceValue=AssetDatabase.LoadAssetAtPath<AudioClip>(Root+"Audio/Polished/"+names[i]+".wav");gains.GetArrayElementAtIndex(i).floatValue=volumes[i];}
+        var audio=UnityEngine.Object.FindFirstObjectByType<CircusAudio>();var so=new SerializedObject(audio);var clips=so.FindProperty("clips");var names=Enum.GetNames(typeof(CircusCue));
+        float[] volumes={.7f,.8f,.8f,.9f,.85f,.6f,.7f,.75f,.55f,.6f,.8f,.9f,.7f,.55f,.85f,.25f,.6f,.6f,.65f,.55f};var gains=so.FindProperty("cueVolumes");gains.arraySize=clips.arraySize=volumes.Length;
+        for(int i=0;i<volumes.Length;i++){clips.GetArrayElementAtIndex(i).objectReferenceValue=AssetDatabase.LoadAssetAtPath<AudioClip>(Root+"Audio/Polished/"+names[i]+".wav");gains.GetArrayElementAtIndex(i).floatValue=volumes[i];}
         so.ApplyModifiedPropertiesWithoutUndo();EditorSceneManager.MarkSceneDirty(audio.gameObject.scene);EditorSceneManager.SaveOpenScenes();AssetDatabase.SaveAssets();return "20 polished cues bound";
     }
 }

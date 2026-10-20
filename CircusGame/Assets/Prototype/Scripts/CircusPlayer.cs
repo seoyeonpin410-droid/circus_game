@@ -133,7 +133,10 @@ namespace CircusPrototype
             {
                 var enemy = attackHits[i].GetComponentInParent<CircusEnemy>();
                 if (enemy && hitEnemies.Add(enemy) && meleeArea.Contains(enemy.transform.position))
+                {
                     enemy.TakeDamage(session.Infected ? 40 : 25);
+                    if(session.Infected && !enemy.Spawning) cameraRig.Shake(.025f,.09f);
+                }
             }
             meleeArea.Hide();
             if (bellWave)
@@ -153,6 +156,7 @@ namespace CircusPrototype
             lastDamage = Time.time;
             CircusAudio.Play(CircusCue.PlayerHit, transform.position);
             Health = Mathf.Max(0, Health - amount);
+            if(amount>=24) cameraRig.Shake(.04f,.12f);
             session.HealthChanged();
         }
         public void RestoreHealth(float amount) { Health = Mathf.Min(100, Health + amount); }

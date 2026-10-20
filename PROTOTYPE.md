@@ -1,3 +1,9 @@
+# 최신 전투 개선
+
+최신 AI·2페이즈·스폰/피격 예고·효과음 연결·Inspector 안내는 [COMBAT_POLISH_UPDATE.md](COMBAT_POLISH_UPDATE.md)를 참고하세요. 아래는 기존 프로토타입 기록입니다.
+
+> 현재 사운드는 이전 합성음 19종으로 되돌렸으며 보스 장판 패턴을 추가했습니다. [GROUND_PATTERN_UPDATE.md](GROUND_PATTERN_UPDATE.md)를 확인하세요.
+
 > UI 여백 수정과 무료 CC0 효과음 20종 개선 사항은 [POLISH_UPDATE.md](POLISH_UPDATE.md)를 확인하세요.
 
 > 2026-10-20: 최신 팀 버전 기반의 3막·보스전·사운드 확장이 적용되었습니다.
@@ -37,5 +43,3 @@ Windows 실행 파일은 `CircusGame/Builds/CircusPrototype/CircusPrototype.exe`
 `com.unity.pipeline`은 로컬 Unity 편집·검증 도구이며, Player 빌드에서는 비활성화됩니다. 편집 도구의 임시 eval 어셈블리 때문에 Input System 링크 단계에서 문자열 변환 오류가 발생하면, 씬을 저장하고 Unity를 재시작한 뒤 빌드합니다. 게임 코드나 아트 파일을 바꿀 필요는 없습니다.
 
 글꼴은 SIL Open Font License의 나눔고딕입니다. 라이선스는 `Assets/Prototype/Fonts/OFL.txt`에 포함되어 있습니다.
-
-

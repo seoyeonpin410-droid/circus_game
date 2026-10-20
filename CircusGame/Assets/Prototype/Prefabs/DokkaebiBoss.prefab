@@ -513,12 +513,21 @@ MonoBehaviour:
   meleeRadius: 3.8
   meleeHalfAngle: 65
   meleeDamage: 24
-  windupSeconds: 0.5
+  windupSeconds: 0.65
   meleeCooldown: 1.4
   rangedCooldown: 2.1
   rangedDistance: 6
   projectileSpeed: 8.5
   projectileDamage: 14
+  groundCooldown: 7.5
+  groundRadius: 1.8
+  groundWarning: 1.15
+  groundDuration: 1.4
+  groundDamage: 18
+  groundCount: 3
+  phaseTwoSpeed: 1.15
+  phaseTwoCooldown: 0.8
+  transitionSeconds: 1.2
 --- !u!1 &6305238427106131615
 GameObject:
   m_ObjectHideFlags: 0
