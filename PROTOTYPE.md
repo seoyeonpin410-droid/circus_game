@@ -1,5 +1,7 @@
 # 최신 전투 개선
 
+2026-10-23 최신 기획 정리는 [CIRCUS_SHOW_UPDATE.md](CIRCUS_SHOW_UPDATE.md)입니다. **하나의 큰 서커스 무대에서 1막4웨이브·2막5웨이브를 진행**하고 이후 보스방이 열립니다. 이전 던전형 방/통로는 비활성 보관 상태입니다. **Q 대시(3.5m/0.2초/쿨타임1.5초)**와 Space로 넘는 보스 지면 충격파가 추가됐습니다. Shift 달리기는 유지합니다.
+
 조작: WASD 이동, **왼쪽/오른쪽 Shift를 누른 채 이동하면 달리기**(기본 6m/s → 9.6m/s), Space 점프, V 시점 변경. Muin Player의 CircusPlayer / Sprint Multiplier에서 달리기 배율을 조정할 수 있습니다. 달리기는 이동 속도에만 적용하며 공격 쿨타임과 점프 높이는 유지합니다.
 
 2026-10-23 연결형 맵/막 진행 확장은 [STAGE_EXPANSION_UPDATE.md](STAGE_EXPANSION_UPDATE.md)에 정리했습니다. 시작→A/B→C/D/FINAL→보스 통로→기존 보스전으로 이어집니다. 최신 연결형 진행에는 아래의 과거 단일 경기장 적 수 설정을 사용하지 않습니다.

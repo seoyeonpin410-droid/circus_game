@@ -23,7 +23,7 @@ public static class CircusArenaVerification
     static IEnumerator Start(BossPattern pattern,float distance=8)
     {
         boss.ClearHazards();boss.SendMessage("CancelExpanded");boss.SendMessage("HideWarnings");yield return null;
-        Set(boss,"centering",false);Set(boss,"betweenDashes",false);Set(boss,"followup",null);Set(boss,"lastPattern",null);Set(boss,"heavyBlockedUntil",0f);Set(boss,"ultimateQueued",false);Set(boss,"nextGround",pattern==BossPattern.GroundSeals?0f:float.MaxValue);
+        Set(boss,"centering",false);Set(boss,"betweenDashes",false);Set(boss,"followup",null);Set(boss,"lastPattern",null);Set(boss,"heavyBlockedUntil",0f);Set(boss,"ultimateQueued",false);Set(boss,"jumpPatternPending",false);Set(boss,"nextGround",pattern==BossPattern.GroundSeals?0f:float.MaxValue);
         Get<Dictionary<BossPattern,float>>(boss,"ready").Clear();Set(boss,"until",0f);Set(boss,"<Action>k__BackingField",BossAction.PatternSelect);
         owner.Model.localPosition=Get<Vector3>(boss,"modelRest");owner.Model.localScale=Get<Vector3>(boss,"baseScale");
         Move(session.Player.transform,owner.transform.position+Vector3.back*distance);session.Player.RestoreHealth(100);Set(session.Player,"lastDamage",-100f);
@@ -80,7 +80,7 @@ public static class CircusArenaVerification
         Check(locked && repeatedWarnings && boss.DashSegments==count+2 && boss.Action==BossAction.Recovery,"Phase 2 has two straight dashes, fresh warnings and final recovery");
         yield return new WaitForSeconds(.9f);Check(boss.Action==BossAction.Recovery,"Multi-dash offers more than one second of counterattack time");
         Move(owner.transform,new Vector3(0,.06f,0));yield return Start(BossPattern.GroundSeals,10);var planned=boss.GroundPlan.ToArray();
-        Check(planned.Length>=3 && planned.Length<=5 && planned.SelectMany((p,i)=>planned.Skip(i+1).Select(q=>Vector3.Distance(p,q))).Min()>boss.Settings(BossPattern.GroundSeals).range*2,"Ground plan places 3-5 separate circles instead of covering the arena");
+        Check(planned.Length>=6 && planned.Length<=8 && planned.SelectMany((p,i)=>planned.Skip(i+1).Select(q=>Vector3.Distance(p,q))).Min()>boss.Settings(BossPattern.GroundSeals).range*2,"Ground plan places 6-8 separate circles instead of covering the arena");
         Move(session.Player.transform,new Vector3(3,.06f,-7));hp=session.Player.Health;
         yield return Wait(()=>Object.FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None).Length>0);yield return new WaitForSeconds(.35f);
         Check(session.Player.Health==hp && Object.FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None).All(h=>h.Phase==GroundFlamePhase.Warning),"Marked floor has a real warning interval without damage");

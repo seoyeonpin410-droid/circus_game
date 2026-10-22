@@ -23,7 +23,7 @@ namespace CircusPrototype
         bool wasFlashing;
         Vector3 shotDirection,modelRest,attackFacing;
         [SerializeField] float rangedLean=10,rangedPullback=.1f,rangedRecoil=.07f,rangedRecovery=.24f;
-        float recoilStart=-100;
+        float recoilStart=-100,emergeStarted=-100;
         public bool Winding=>winding;
         float nextAttack, maxHealth, verticalSpeed, windupUntil;
         bool dead, winding;
@@ -78,7 +78,7 @@ namespace CircusPrototype
                 foreach(var renderer in modelRenderers) renderer.enabled=true;
                 if(controller) controller.enabled=true;
                 if(healthCanvas) healthCanvas.gameObject.SetActive(true);
-                Destroy(spawnArea.gameObject); spawnArea=null;
+                Destroy(spawnArea.gameObject); spawnArea=null;emergeStarted=Time.time;CircusCombatFx.Burst(transform.position+Vector3.up*.1f,new Color(.65f,.35f,1),8,.18f,1);
                 nextAttack=Mathf.Max(nextAttack,Time.time+.6f);
             }
             if(!session || !session.Player || !session.IsRunning || dead) { if(area) area.Hide(); if(warning) warning.enabled=false; return; }
@@ -171,6 +171,8 @@ namespace CircusPrototype
                 model.localPosition=modelRest+transform.InverseTransformDirection(attackFacing)*kick;
                 if(t<1)model.rotation=Quaternion.LookRotation(attackFacing)*Quaternion.Euler(Mathf.Sin(t*Mathf.PI)*6,0,0);
             }
+            if(!ranged && Time.time-emergeStarted>=.25f)model.localPosition=modelRest;
+            if(Time.time-emergeStarted<.25f)model.localPosition=modelRest-Vector3.up*(.65f*(1-Mathf.SmoothStep(0,1,(Time.time-emergeStarted)/.25f)));
             bool flashing=Flashing;
             if(modelRenderers!=null && (flashing || wasFlashing))
                 foreach(var renderer in modelRenderers)

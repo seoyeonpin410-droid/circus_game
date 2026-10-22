@@ -81,9 +81,9 @@ public static class CircusBossEntranceVerification
         Check(session.Player.Fire(),"Player attacks unlock after camera return");
         foreach(var p in Object.FindObjectsByType<CircusProjectile>(FindObjectsSortMode.None))Object.Destroy(p.gameObject);
         owner.TakeDamage(owner.Health-owner.MaxHealth*.3f);yield return null;yield return Wait(()=>boss.Phase==3 && !boss.IsInvulnerable);
-        Check(Enum.GetValues(typeof(BossPattern)).Length==14,"Existing nine patterns and five arena extensions are available");
+        Check(Enum.GetValues(typeof(BossPattern)).Length==15,"Existing nine patterns and five arena extensions and the jump shockwave are available");
         foreach(BossPattern pattern in Enum.GetValues(typeof(BossPattern)).Cast<BossPattern>().Take(9)){
-            boss.ClearHazards();boss.SendMessage("CancelExpanded");Set(boss,"ultimateQueued",false);boss.SendMessage("HideWarnings",SendMessageOptions.DontRequireReceiver);
+            boss.ClearHazards();boss.SendMessage("CancelExpanded");Set(boss,"ultimateQueued",false);Set(boss,"jumpPatternPending",false);boss.SendMessage("HideWarnings",SendMessageOptions.DontRequireReceiver);
             Get<Dictionary<BossPattern,float>>(boss,"ready").Clear();Set(boss,"lastPattern",null);Set(boss,"followup",null);Set(boss,"comboStep",0);Set(boss,"centering",false);Set(boss,"until",0f);Set(boss,"nextGround",0f);Set(boss,"<Action>k__BackingField",BossAction.PatternSelect);
             bool close=pattern==BossPattern.Swing || pattern==BossPattern.DoubleSwing || pattern==BossPattern.Slam;
             Move(session.Player.transform,owner.transform.position+Vector3.back*(close?2.6f:6.5f));session.Player.RestoreHealth(100);Set(session.Player,"lastDamage",-100f);yield return null;

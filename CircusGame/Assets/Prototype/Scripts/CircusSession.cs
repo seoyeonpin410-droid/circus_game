@@ -190,6 +190,8 @@ namespace CircusPrototype
             foreach (var enemy in enemies) if (enemy) Destroy(enemy.gameObject);
             if(Boss)Destroy(Boss.gameObject);
             enemies.Clear(); Boss = null;ResetStage(); CountdownText = ""; CountdownRemaining = 0;
+            foreach(var w in FindObjectsByType<CircusGroundShockwave>(FindObjectsSortMode.None))w.Cancel();
+            FindFirstObjectByType<CircusArenaHazard>()?.Cancel();
             ClearProjectiles(); CircusAudio.StopFlights();CircusAudio.StopBossPatterns();
             foreach(var field in FindObjectsByType<CircusSafeField>(FindObjectsSortMode.None))field.Cancel();
             foreach(var flame in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))flame.Cancel();

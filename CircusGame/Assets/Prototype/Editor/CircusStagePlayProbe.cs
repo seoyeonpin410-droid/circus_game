@@ -19,6 +19,10 @@ public static class CircusStagePlayProbe
     static IEnumerator Play(CircusSession s,bool heal,float scale)
     {
         Application.runInBackground=true;s.BeginShow();Time.timeScale=scale;
+        var keyboard=UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Keyboard>();keyboard.MakeCurrent();
+        var oldBg=UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior;var oldEd=UnityEngine.InputSystem.InputSystem.settings.editorInputBehaviorInPlayMode;
+        UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior=UnityEngine.InputSystem.InputSettings.BackgroundBehavior.IgnoreFocus;
+        UnityEngine.InputSystem.InputSystem.settings.editorInputBehaviorInPlayMode=UnityEngine.InputSystem.InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
         var rig=Object.FindFirstObjectByType<CircusCamera>();var camera=Camera.main;var cc=s.Player.GetComponent<CharacterController>();var path=new Queue<Vector3>();
         int previous=-1,shots=0,swings=0,peak=0;float start=Time.time,areaStart=Time.time;var notes=new List<string>();var captured=new HashSet<string>();
         Directory.CreateDirectory("Temp/StagePlay");File.WriteAllText("Temp/stage-play.txt","RUNNING");float deadline=Time.realtimeSinceStartup+600;
@@ -26,6 +30,8 @@ public static class CircusStagePlayProbe
         while(s.State!=ShowState.Victory && s.State!=ShowState.Defeat && Time.realtimeSinceStartup<deadline){
             if(s.State==ShowState.BossIntro){rig.enabled=true;yield return null;continue;}
             if(!s.IsRunning){yield return null;continue;}
+            bool jump=cc.isGrounded && Object.FindObjectsByType<CircusGroundShockwave>(FindObjectsSortMode.None).Any(w=>{float gap=Vector3.ProjectOnPlane(s.Player.transform.position-w.transform.position,Vector3.up).magnitude-w.Radius;return gap>0 && gap<2.8f;});
+            UnityEngine.InputSystem.InputSystem.QueueStateEvent(keyboard,new UnityEngine.InputSystem.LowLevel.KeyboardState(jump?new[]{UnityEngine.InputSystem.Key.Space}:Array.Empty<UnityEngine.InputSystem.Key>()));
             if(heal)s.Player.RestoreHealth(100);peak=Mathf.Max(peak,s.Alive);
             var area=s.ActiveArea;var enemies=s.Enemies.Where(e=>e && !e.Spawning && e.Health>0).ToArray();
             Vector3 movement=Vector3.zero,aim=s.Player.transform.position+Vector3.forward*6+Vector3.up;
@@ -46,7 +52,7 @@ public static class CircusStagePlayProbe
                 int index=s.StageIndex;
                 if(index!=previous && index<s.Areas.Length){
                     notes.Add($"Reached travel to {s.Areas[index].areaId}: {Time.time-start:F1}s, prior segment {Time.time-areaStart:F1}s");areaStart=Time.time;File.WriteAllLines("Temp/stage-play.txt",notes);
-                    path.Clear();if(index>0){var old=s.Areas[index-1];path.Enqueue(old.Center);path.Enqueue(old.exitBarrier.transform.position+(old.exitBarrier.transform.position-old.Center).normalized*2);}path.Enqueue(s.Areas[index].entranceTrigger.transform.position);previous=index;
+                    path.Clear();if(index>0){var old=s.Areas[index-1];path.Enqueue(old.Center);path.Enqueue(old.exitBarrier.transform.position+(old.exitBarrier.transform.position-old.Center).normalized*2);}path.Enqueue(s.Areas[index].entranceTrigger?s.Areas[index].entranceTrigger.transform.position:s.Areas[index].Center);previous=index;
                 }
                 while(path.Count>0 && Vector3.ProjectOnPlane(path.Peek()-s.Player.transform.position,Vector3.up).magnitude<.6f)path.Dequeue();
                 if(path.Count>0){movement=path.Peek()-s.Player.transform.position;movement.y=0;aim=s.Player.transform.position+movement.normalized*5+Vector3.up;movement.Normalize();}
@@ -61,6 +67,6 @@ public static class CircusStagePlayProbe
             yield return null;
         }
         notes.Add($"RESULT: {s.State}; combat-time {s.GameplaySeconds:F2}s; elapsed scaled time {Time.time-start:F2}s; shots {shots}; melee {swings}; score {s.Score}; peak {peak}; HP {s.Player.Health}; automatic healing {heal}. Real camera/projectile/melee damage, no injected enemy damage.");
-        File.WriteAllLines("Temp/stage-play.txt",notes);Time.timeScale=1;rig.enabled=true;running=false;
+        UnityEngine.InputSystem.InputSystem.RemoveDevice(keyboard);UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior=oldBg;UnityEngine.InputSystem.InputSystem.settings.editorInputBehaviorInPlayMode=oldEd;File.WriteAllLines("Temp/stage-play.txt",notes);Time.timeScale=1;rig.enabled=true;running=false;
     }
 }

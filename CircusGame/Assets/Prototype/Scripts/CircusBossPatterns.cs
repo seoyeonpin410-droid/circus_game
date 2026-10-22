@@ -29,7 +29,7 @@ namespace CircusPrototype
         [SerializeField,Min(.25f)] float sequentialInterval=.34f,orbitInterval=.32f;
         [SerializeField,Range(1,3)] int phaseTwoDashCount=2,phaseThreeDashCount=3;
         [SerializeField,Min(.3f)] float multiDashGap=.4f;
-        [SerializeField,Range(3,5)] int hazardAreaCount=4;
+        [SerializeField,HideInInspector] int hazardAreaCount=4; // Retained for older setup scripts; phase-specific counts are used now.
         [SerializeField,Min(.8f)] float hazardWarningSeconds=1.1f;
         [Header("Finale timing / response windows")]
         [SerializeField,Min(.5f)] float ultimateFloorGap=.6f,ultimateRingWarning=.6f,ultimateRingLife=1.05f,ultimateShockWarning=1.05f;
@@ -47,7 +47,7 @@ namespace CircusPrototype
         TrailRenderer rushTrail;
         float windupDuration,expandedStarted,expandedWarning,heavyBlockedUntil,dashGapStarted;
         int expandedStage,expandedShots,dashPart,comboIndex;
-        bool betweenDashes,ultimateQueued;
+        bool betweenDashes,ultimateQueued,jumpPatternPending;
         Vector3 safeA,safeB,ringGapDirection;
         public int ExpandedShots {get;private set;}
         public int DashSegments {get;private set;}
@@ -60,12 +60,22 @@ namespace CircusPrototype
         public float HeavyBlockedUntil=>heavyBlockedUntil;
         public IReadOnlyList<Vector3> GroundPlan=>groundPlan;
         public float ReadyAt(BossPattern pattern)=>ready.TryGetValue(pattern,out var value)?value:0;
-        bool CustomPattern(BossPattern p)=>p==BossPattern.SequentialFlames || p==BossPattern.OrbitVolley || p==BossPattern.SafeZones || p==BossPattern.Finale;
+        bool CustomPattern(BossPattern p)=>p==BossPattern.SequentialFlames || p==BossPattern.OrbitVolley || p==BossPattern.SafeZones || p==BossPattern.Finale || p==BossPattern.GroundShockwave;
         bool IsDash(BossPattern p)=>p==BossPattern.Charge || p==BossPattern.MultiDash;
-        bool Heavy(BossPattern p)=>p==BossPattern.Slam || p==BossPattern.MultiDash || p==BossPattern.GroundSeals || p==BossPattern.RingFlames || p==BossPattern.SafeZones || p==BossPattern.Finale;
+        bool Heavy(BossPattern p)=>p==BossPattern.Slam || p==BossPattern.MultiDash || p==BossPattern.GroundSeals || p==BossPattern.RingFlames || p==BossPattern.SafeZones || p==BossPattern.Finale || p==BossPattern.GroundShockwave;
+        [Header("Jump shockwave and stronger staged ground seals")]
+        [SerializeField] BossPatternSettings groundShockwave=new BossPatternSettings(14,1,1.3f,16,16.2f,8,1);
+        [SerializeField,Range(6,8)] int phaseTwoGroundCount=7;
+        [SerializeField,Range(8,10)] int phaseThreeGroundCount=9;
+        [SerializeField,Range(2,3)] int groundBatchSize=3;
+        [SerializeField,Min(.5f)] float groundBatchGap=.55f;
+        [SerializeField,Min(.8f)] float secondShockwaveGap=.95f;
+        [SerializeField,Range(.3f,.7f)] float shockwaveWidth=.55f,shockwaveJumpClearance=.35f;
+        [SerializeField] bool phaseThreeDoubleShockwave=true;
         float WindupSeconds(BossPatternSettings c)=>Mathf.Max(.4f,c.windup/Mathf.Max(.5f,Phase==3?phaseThreeAttackSpeed:Phase==2?phaseTwoAttackSpeed:1));
         bool ExpandedAllowed(BossPattern p)
         {
+            if(p==BossPattern.GroundShockwave)return Phase>=2;
             if(p==BossPattern.SafeZones || p==BossPattern.Finale)return Phase==3;
             if(p==BossPattern.MultiDash)return Phase>=2 && ToPlayer.magnitude>=3.5f && ToPlayer.magnitude<=multiDash.range+2;
             return Phase>=2 && ToPlayer.magnitude>=4 && ToPlayer.magnitude<=Settings(p).range;
@@ -73,7 +83,7 @@ namespace CircusPrototype
         void ResetExpanded()
         {
             groundPlan.Clear();betweenDashes=false;expandedStage=expandedShots=dashPart=0;
-            ultimateQueued=false;heavyBlockedUntil=0;
+            ultimateQueued=false;jumpPatternPending=false;heavyBlockedUntil=0;
             var go=new GameObject("Short boss rush wake");go.transform.SetParent(transform,false);go.transform.localPosition=Vector3.up*.4f;
             rushTrail=go.AddComponent<TrailRenderer>();rushTrail.sharedMaterial=CircusCombatFx.Glow;rushTrail.time=.12f; rushTrail.minVertexDistance=.12f;
             rushTrail.widthCurve=AnimationCurve.Linear(0,.35f,1,0);rushTrail.startColor=new Color(1,.55f,.2f,.6f);rushTrail.endColor=Color.clear;
@@ -107,8 +117,9 @@ namespace CircusPrototype
             var options=new List<Vector3>();
             for(int i=0;i<5;i++)options.Add(player+Quaternion.AngleAxis(90+i*45,Vector3.up)*escape*5);
             for(int i=0;i<16;i++)options.Add(arenaCenter+Quaternion.Euler(0,i*22.5f,0)*Vector3.forward*(arenaRadius*.6f));
+            for(int ring=0;ring<3;ring++)for(int i=0;i<28;i++)options.Add(arenaCenter+Quaternion.Euler(0,i*360f/28+ring*12,0)*Vector3.forward*(4+ring*3.5f));
             foreach(var option in options){
-                if(groundPlan.Count>=Mathf.Clamp(hazardAreaCount,3,5))break;
+                if(groundPlan.Count>=Mathf.Clamp(Phase==3?phaseThreeGroundCount:phaseTwoGroundCount,6,10))break;
                 var point=ClampArena(option,radius+.5f);
                 if(SegmentDistance(point,player,safe)<radius+1)continue;
                 bool overlaps=false;foreach(var used in groundPlan)if(Vector3.Distance(point,used)<radius*2+.4f)overlaps=true;
@@ -148,7 +159,7 @@ namespace CircusPrototype
         }
         void BeginCustom()
         {
-            if(Pattern==BossPattern.Finale){
+            if(Pattern==BossPattern.Finale || Pattern==BossPattern.GroundShockwave){
                 var d=arenaCenter-transform.position;d.y=0;
                 if(d.magnitude>centerStopDistance){centering=true;Action=BossAction.Chase;until=Time.time+8;return;}
             }
@@ -173,7 +184,8 @@ namespace CircusPrototype
             HideWarnings();expandedStarted=Time.time;expandedStage=0;expandedShots=0;started=Time.time;
             lockedDirection=ToPlayer.sqrMagnitude>.01f?ToPlayer.normalized:transform.forward;attackOrigin=transform.position;
             expandedWarning=WindupSeconds(Settings(Pattern));Action=BossAction.SpecialWindup;
-            if(Pattern==BossPattern.SafeZones || Pattern==BossPattern.Finale)PlaceSafeAreas();else ShowCustomCharges();
+            if(Pattern==BossPattern.GroundShockwave){FindFirstObjectByType<CircusHud>()?.Announce("지면 충격파 · SPACE로 뛰어넘으세요",expandedWarning+1.5f);}
+            else if(Pattern==BossPattern.SafeZones || Pattern==BossPattern.Finale)PlaceSafeAreas();else ShowCustomCharges();
             until=Time.time+expandedWarning;
             CircusAudio.PlayBossPattern(Pattern==BossPattern.Finale?CircusBossSound.UltimateCharge:Pattern==BossPattern.OrbitVolley?CircusBossSound.OrbitPrepare:Pattern==BossPattern.SafeZones?CircusBossSound.GroundMark:CircusBossSound.SequencePrepare,transform.position);
         }
@@ -198,6 +210,7 @@ namespace CircusPrototype
         void TickCustom()
         {
             var config=Settings(Pattern);
+            if(Pattern==BossPattern.GroundShockwave){TickGroundShockwave();return;}
             if(Action==BossAction.SpecialWindup){
                 float t=Mathf.Clamp01((Time.time-expandedStarted)/Mathf.Max(.1f,expandedWarning));
                 if(Pattern==BossPattern.SafeZones || Pattern==BossPattern.Finale){Offset(Vector3.up*.12f*t);Pose(-10*t);enemy.Model.localScale=baseScale*(1+.04f*t);Glow(.12f+t*.3f);}
@@ -223,6 +236,14 @@ namespace CircusPrototype
             }
             if(expandedShots>=count && Time.time>=nextRelease){HideWarnings();FinishPattern();}
         }
+        void TickGroundShockwave(){
+            var c=groundShockwave;
+            if(Action==BossAction.SpecialWindup){float t=Mathf.Clamp01((Time.time-expandedStarted)/expandedWarning);Offset(Vector3.up*(slamLift*1.3f)*t);Pose(-26*t);area.ShowSlam(attackOrigin,.8f,t);Glow(.2f+t*.5f);if(Time.time>=until){Action=BossAction.SpecialAttack;expandedStage=0;started=Time.time;}return;}
+            if(Action!=BossAction.SpecialAttack)return;
+            if(expandedStage==0){float t=Mathf.Clamp01((Time.time-started)/Mathf.Max(.05f,slamDropSeconds));Offset(Vector3.up*(slamLift*1.3f)*(1-t*t*t));Pose(Mathf.Lerp(-26,18,t));if(t<1)return;Offset(Vector3.zero);area.Hide();CircusCombatFx.Slam(transform.position,2);CircusAudio.PlayAccent(true,transform.position);FindFirstObjectByType<CircusCamera>()?.Shake(.03f,.12f);LaunchGroundWave();expandedStage=1;nextRelease=Time.time+secondShockwaveGap;if(Phase<3 || !phaseThreeDoubleShockwave)FinishPattern();return;}
+            if(Time.time>=nextRelease){LaunchGroundWave();FinishPattern();}
+        }
+        void LaunchGroundWave(){CircusGroundShockwave.Create(session,enemy,transform.position,groundShockwave.speed,groundShockwave.range,groundShockwave.damage,shockwaveWidth,shockwaveJumpClearance);}
         void TickFinale()
         {
             if(expandedStage==1 && Time.time>=nextRelease){expandedStage=2;started=Time.time;nextRelease=Time.time+ultimateRingWarning;FindFirstObjectByType<CircusHud>()?.Announce("투사체 사이의 틈을 찾으세요",1.2f);}

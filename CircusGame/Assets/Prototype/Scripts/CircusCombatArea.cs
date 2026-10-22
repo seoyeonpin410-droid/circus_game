@@ -53,8 +53,8 @@ namespace CircusPrototype
         public void Unlock(){if(State==CircusAreaState.NotStarted)Set(entranceBarrier,false);}
         public bool StartBattle()
         {if(State!=CircusAreaState.NotStarted)return false;State=CircusAreaState.Battle;Starts++;Set(entranceBarrier,true);Set(exitBarrier,true);return true;}
-        public void Complete()
-        {if(State!=CircusAreaState.Battle)return;State=CircusAreaState.Cleared;Clears++;Set(entranceBarrier,false);Set(exitBarrier,false);}
+        public void Complete(bool openExit=true)
+        {if(State!=CircusAreaState.Battle)return;State=CircusAreaState.Cleared;Clears++;Set(entranceBarrier,false);Set(exitBarrier,!openExit);}
         static void Set(GameObject go,bool active){if(go)go.SetActive(active);}
     }
 }
