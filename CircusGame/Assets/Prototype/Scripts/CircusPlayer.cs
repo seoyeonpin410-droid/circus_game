@@ -10,6 +10,7 @@ namespace CircusPrototype
         [SerializeField] Transform bell;
         [SerializeField] Camera aimCamera;
         [SerializeField] float moveSpeed = 6;
+        [SerializeField, Min(1)] float sprintMultiplier = 1.6f;
         [SerializeField] float jumpHeight = 1.8f;
         [SerializeField] float attackRange = 3.6f;
         [SerializeField] float attackCooldown = .56f;
@@ -40,9 +41,12 @@ namespace CircusPrototype
         bool meleePending;
         float meleeReady;
         Vector3 meleeOrigin, meleeForward;
+        bool sprinting;
         public bool MeleePending => meleePending;
         public CircusAttackArea MeleeArea => meleeArea;
         public float MoveSpeed=>moveSpeed;
+        public bool IsSprinting=>session && session.IsRunning && sprinting;
+        public float CurrentMoveSpeed=>moveSpeed*(IsSprinting?Mathf.Max(1,sprintMultiplier):1);
         public float Health { get; private set; } = 100;
         public int AttackCount { get; private set; }
         public Vector3 AimDirection { get; private set; } = Vector3.forward;
@@ -64,7 +68,7 @@ namespace CircusPrototype
         }
         void Update()
         {
-            if (!session || !session.IsRunning) { if (meleeArea) meleeArea.Hide(); return; }
+            if (!session || !session.IsRunning) { sprinting=false; if (meleeArea) meleeArea.Hide(); return; }
             var keyboard = Keyboard.current;
             Vector2 input = Vector2.zero;
             if (keyboard != null)
@@ -73,9 +77,10 @@ namespace CircusPrototype
                 input.y = (keyboard.wKey.isPressed ? 1 : 0) - (keyboard.sKey.isPressed ? 1 : 0);
             }
             input = Vector2.ClampMagnitude(input, 1);
+            sprinting=input.sqrMagnitude>.001f && keyboard!=null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
             var forward = Vector3.ProjectOnPlane(aimCamera.transform.forward, Vector3.up).normalized;
             var right = Vector3.ProjectOnPlane(aimCamera.transform.right, Vector3.up).normalized;
-            var movement = (forward * input.y + right * input.x) * moveSpeed;
+            var movement = (forward * input.y + right * input.x) * CurrentMoveSpeed;
             if (controller.isGrounded && verticalSpeed < 0) verticalSpeed = -2;
             if (controller.isGrounded && keyboard?.spaceKey.wasPressedThisFrame == true)
                 verticalSpeed = Mathf.Sqrt(jumpHeight * 40);
@@ -178,6 +183,7 @@ namespace CircusPrototype
             verticalSpeed = nextAttack = nextShot = 0;
             lastDamage = attackTime = -100;
             AttackCount = 0; meleePending = false;meleeStarted=-100;visual.localPosition=visualRest;
+            sprinting=false;
             if (meleeArea) meleeArea.Hide();
             if (bellWave) bellWave.enabled = false;
         }

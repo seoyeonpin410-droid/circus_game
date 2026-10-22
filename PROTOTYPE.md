@@ -1,5 +1,7 @@
 # 최신 전투 개선
 
+조작: WASD 이동, **왼쪽/오른쪽 Shift를 누른 채 이동하면 달리기**(기본 6m/s → 9.6m/s), Space 점프, V 시점 변경. Muin Player의 CircusPlayer / Sprint Multiplier에서 달리기 배율을 조정할 수 있습니다. 달리기는 이동 속도에만 적용하며 공격 쿨타임과 점프 높이는 유지합니다.
+
 2026-10-23 연결형 맵/막 진행 확장은 [STAGE_EXPANSION_UPDATE.md](STAGE_EXPANSION_UPDATE.md)에 정리했습니다. 시작→A/B→C/D/FINAL→보스 통로→기존 보스전으로 이어집니다. 최신 연결형 진행에는 아래의 과거 단일 경기장 적 수 설정을 사용하지 않습니다.
 
 2026-10-22 최신 설정은 [ARENA_BOSS_UPDATE.md](ARENA_BOSS_UPDATE.md)입니다. 기존 9개 패턴에 연속탄·연속 돌진·부유탄·안전지대·필살기를 확장했습니다. BGM과 기존 조용한 적중/내려찍기/등장 소리는 유지하고, 별도 음량을 가진 작은 보스 패턴 전용 소리를 추가했습니다.
