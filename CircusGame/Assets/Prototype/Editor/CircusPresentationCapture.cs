@@ -44,22 +44,24 @@ public static class CircusPresentationCapture
         yield return Frames("boss-slam",84);Time.captureFramerate=0;Object.Destroy(owner.gameObject);session.ReturnToMenu();
         File.WriteAllText("Temp/Presentation/recording.txt","COMPLETE "+frame+" actual game frames at 30 fps");
     }
-    public static string Balance(){session=Object.FindFirstObjectByType<CircusSession>();rig=Object.FindFirstObjectByType<CircusCamera>();session.StartCoroutine(Probe());return "Real projectile-only boss balance probe started";}
-    static IEnumerator Probe()
+    public static string Balance(bool moving=false){session=Object.FindFirstObjectByType<CircusSession>();rig=Object.FindFirstObjectByType<CircusCamera>();session.StartCoroutine(Probe(moving));return "Real projectile-only boss balance probe started";}
+    static IEnumerator Probe(bool moving)
     {
         session.BeginShow();yield return new WaitForSeconds(3.7f);session.StopCoroutine((Coroutine)typeof(CircusSession).GetField("roundRoutine",F).GetValue(session));
         foreach(var e in session.Enemies.ToArray())if(e){session.EnemyDefeated(e);Object.Destroy(e.gameObject);}yield return null;
         Move(session.Player.transform,new Vector3(0,.06f,-2));var owner=Enemy("DokkaebiBoss",new Vector3(0,.06f,5));var boss=owner.GetComponent<CircusBoss>();
         while(boss.IsInvulnerable)yield return null;
-        float start=Time.time,end=start+95;int shots=0;rig.SetFirstPerson(false);
+        float start=Time.time,end=start+125;int shots=0;rig.SetFirstPerson(true);rig.enabled=false;var camera=Camera.main;var cc=session.Player.GetComponent<CharacterController>();Directory.CreateDirectory("Temp/Presentation");
         while(owner && owner.Health>0 && Time.time<end){
             session.Player.RestoreHealth(100);
             var d=owner.transform.position-session.Player.transform.position;d.y=0;
             Set(rig,"yaw",Mathf.Atan2(d.x,d.z)*Mathf.Rad2Deg);Set(rig,"pitch",0f);
-            // Stationary player fires through the actual camera/raycast/projectile path.
+            if(moving){var travel=d.normalized*Mathf.Clamp(d.magnitude-6,-1.5f,1.5f)+Vector3.Cross(Vector3.up,d.normalized)*1.2f;cc.Move(travel*Time.deltaTime);}
+            camera.transform.position=session.Player.transform.position+Vector3.up*1.6f;camera.transform.LookAt(owner.transform.position+Vector3.up);
+            // Aim at the visible boss collider through the actual camera/raycast/projectile path.
             if(session.Player.Fire())shots++;yield return null;
         }
-        File.WriteAllText("Temp/Presentation/balance.txt",$"Boss HP: {owner.MaxHealth}\nActual elapsed combat seconds: {Time.time-start:F2}\nPlayer projectiles fired: {shots}\nBoss HP remaining: {owner.Health}\nPhase transitions: {boss.PhaseTransitions}\nProbe: stationary firing; player healed solely to prevent test interruption. No dodging or melee input.\n");
-        if(owner)Object.Destroy(owner.gameObject);session.ReturnToMenu();
+        File.WriteAllText("Temp/Presentation/balance"+(moving?"-moving":"-aimed")+".txt",$"Boss HP: {owner.MaxHealth}\nActual elapsed combat seconds: {Time.time-start:F2}\nPlayer projectiles fired: {shots}\nBoss HP remaining: {owner.Health}\nPhase transitions: {boss.PhaseTransitions}\nPattern history: {string.Join(",",boss.PatternHistory)}\nImmediate repeats: {boss.PatternHistory.Zip(boss.PatternHistory.Skip(1),(a,b)=>a==b).Count(v=>v)}\nUltimate executions: {boss.UltimateExecutions}\nMoving: {moving}. Actual aimed projectiles; player healed solely to prevent test interruption. No melee input.\n");
+        rig.enabled=true;if(owner)Object.Destroy(owner.gameObject);session.ReturnToMenu();
     }
 }

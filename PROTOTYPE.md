@@ -1,10 +1,12 @@
 # 최신 전투 개선
 
-최신 보스 낙하 등장·카메라·포효·공격 준비 동작과 Inspector 값은 [BOSS_ENTRANCE_UPDATE.md](BOSS_ENTRANCE_UPDATE.md)를 참고하세요.
+2026-10-23 연결형 맵/막 진행 확장은 [STAGE_EXPANSION_UPDATE.md](STAGE_EXPANSION_UPDATE.md)에 정리했습니다. 시작→A/B→C/D/FINAL→보스 통로→기존 보스전으로 이어집니다. 최신 연결형 진행에는 아래의 과거 단일 경기장 적 수 설정을 사용하지 않습니다.
 
-세 공격의 모션·타격감·밸런스와 최종 Inspector 값은 [COMBAT_PRESENTATION_UPDATE.md](COMBAT_PRESENTATION_UPDATE.md)를 참고하세요. 현재 소리는 BGM과 낮은 근접 적중음·내려찍기 충격음 두 개만 재생합니다.
+2026-10-22 최신 설정은 [ARENA_BOSS_UPDATE.md](ARENA_BOSS_UPDATE.md)입니다. 기존 9개 패턴에 연속탄·연속 돌진·부유탄·안전지대·필살기를 확장했습니다. BGM과 기존 조용한 적중/내려찍기/등장 소리는 유지하고, 별도 음량을 가진 작은 보스 패턴 전용 소리를 추가했습니다.
 
-최신 3페이즈 보스 패턴·BGM·Inspector 안내는 [FINAL_BOSS_UPDATE.md](FINAL_BOSS_UPDATE.md)를 참고하세요. 아래는 기존 프로토타입 기록입니다.
+보스 낙하 등장·카메라·포효·공격 준비 동작의 이전 작업 기록은 [BOSS_ENTRANCE_UPDATE.md](BOSS_ENTRANCE_UPDATE.md)를 참고하세요.
+
+세 공격의 모션·타격감 작업은 [COMBAT_PRESENTATION_UPDATE.md](COMBAT_PRESENTATION_UPDATE.md), 이전 3페이즈 구성은 [FINAL_BOSS_UPDATE.md](FINAL_BOSS_UPDATE.md)에 기록돼 있습니다. 아래는 당시 설정에 대한 과거 기록이며 최신 밸런스/소리 연결은 ARENA_BOSS_UPDATE를 우선하세요.
 
 > 현재 사운드는 이전 합성음 19종으로 되돌렸으며 보스 장판 패턴을 추가했습니다. [GROUND_PATTERN_UPDATE.md](GROUND_PATTERN_UPDATE.md)를 확인하세요.
 

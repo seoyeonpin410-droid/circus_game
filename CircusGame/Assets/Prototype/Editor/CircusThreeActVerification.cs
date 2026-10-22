@@ -108,7 +108,7 @@ public static class CircusThreeActVerification
         deadline=Time.realtimeSinceStartup+10;
         while(!session.Boss && Time.realtimeSinceStartup<deadline) yield return null;
         var boss=session.Boss;
-        Check(session.Round==3 && boss && session.Enemies.Count==1 && boss.MaxHealth==900,"Act 3 spawns exactly one high-health boss");
+        Check(session.Round==3 && boss && session.Enemies.Count==1 && boss.MaxHealth==1000,"Act 3 spawns exactly one high-health boss");
         if(boss)
         {
             Check(session.State==ShowState.BossIntro && !player.Fire() && !player.Attack(),"Boss entrance blocks both player attacks");

@@ -42,6 +42,12 @@
 | FlameLaunch | JaggedStone magical_3 |
 | UIClick | Kenney Interface click_001 |
 
+## 2026-10-22 경기장 패턴 전용 음원
+
+`Arena/*.wav` 12개는 `Tools/GenerateArenaAudio.py`에서 사인파, 스윕, 고정 시드 잡음과 각기 다른 엔벌로프로 직접 합성한 44,100Hz 모노 PCM WAV입니다. 외부 샘플이나 상용 작품 음원을 사용하지 않았습니다.
+
+SequencePrepare/Release, OrbitPrepare/Release, GroundMark/Impact, DashPrepare/Release, PhaseShift, UltimateCharge/Burst/Impact는 각각 해당 보스 행동에만 연결됩니다. 전용 마스터 0.65, 개별 볼륨 0.13(필살기 충전 0.18, 필살기 충격 0.24), 4채널 및 0.16초 반복 제한을 적용했습니다. 과거 일반 효과음 설정은 꺼진 상태를 유지합니다. 취향에 맞지 않으면 `CircusAudio.Boss Pattern Sounds Enabled`만 꺼도 기존 BGM/등장/조용한 적중음은 유지됩니다.
+
 ## 이전 합성 원본
 
 Generated는 Python 표준 라이브러리만 사용하는 `Tools/GenerateCircusSounds.py`로 만들었습니다.

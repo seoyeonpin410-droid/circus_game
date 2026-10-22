@@ -1,6 +1,7 @@
 using UnityEngine;
 namespace CircusPrototype
 {
+    public enum CircusBossSound { SequencePrepare,SequenceRelease,OrbitPrepare,OrbitRelease,GroundMark,GroundImpact,DashPrepare,DashRelease,PhaseShift,UltimateCharge,UltimateBurst,UltimateImpact }
     public enum CircusCue { Countdown, Start, ActChange, Clear, PlayerMelee, PlayerShot, PlayerHit, PlayerDeath, EnemyHit, EnemyDeath, BossArrival, BossMelee, BossShot, BossHit, BossDeath, FlameFlight, FlameImpact, Warning, FlameLaunch, UIClick, EnemyMelee, MagicCharge, PhaseShift, BossPrepare, SlamPrepare, BossSlam, DashPrepare, BossDash }
     public sealed class CircusAudio : MonoBehaviour
     {
@@ -11,6 +12,22 @@ namespace CircusPrototype
         [SerializeField,Range(0,1)] float meleeImpactVolume=.12f,slamImpactVolume=.2f;
         [SerializeField] AudioClip meleeImpactClip,slamImpactClip;
         float nextAccent;
+        [Header("Quiet, role-specific arena patterns")]
+        [SerializeField] bool bossPatternSoundsEnabled=true;
+        [SerializeField] AudioClip[] bossPatternClips;
+        [SerializeField] float[] bossPatternVolumes;
+        [SerializeField,Range(0,1)] float bossPatternMaster=.65f;
+        AudioSource[] patternVoices;float[] patternReady;bool patternPaused;
+        public static void PlayBossPattern(CircusBossSound cue,Vector3 point) {
+            if(!instance || !instance.bossPatternSoundsEnabled)return;int index=(int)cue;
+            if(instance.bossPatternClips==null || index>=instance.bossPatternClips.Length || !instance.bossPatternClips[index] || Time.unscaledTime<instance.patternReady[index])return;
+            foreach(var voice in instance.patternVoices)if(!voice.isPlaying){
+                voice.transform.position=point;voice.spatialBlend=.15f;voice.clip=instance.bossPatternClips[index];
+                voice.volume=instance.bossPatternMaster*(instance.bossPatternVolumes!=null && index<instance.bossPatternVolumes.Length?instance.bossPatternVolumes[index]:.15f);
+                voice.Play();instance.patternReady[index]=Time.unscaledTime+.16f;break;
+            }
+        }
+        public static void StopBossPatterns(){if(instance && instance.patternVoices!=null)foreach(var voice in instance.patternVoices)voice.Stop();}
         [Header("Boss entrance only")]
         [SerializeField] bool bossIntroSoundsEnabled=true;
         [SerializeField] AudioClip bossLandingClip,bossRoarClip;
@@ -40,6 +57,7 @@ namespace CircusPrototype
         void Awake()
         {
             instance = this; nextCue = new float[System.Enum.GetValues(typeof(CircusCue)).Length];
+            patternReady=new float[System.Enum.GetValues(typeof(CircusBossSound)).Length];patternVoices=new AudioSource[4];for(int i=0;i<4;i++)patternVoices[i]=MakeSource("Boss pattern "+i);
             introVoice=MakeSource("Boss entrance accent");voices = new AudioSource[maxVoices]; flights = new AudioSource[4];
             for(int i=0;i<voices.Length;i++) voices[i] = MakeSource("Effect " + i);
             for(int i=0;i<flights.Length;i++) { flights[i] = MakeSource("Flame flight " + i); flights[i].loop=true; }
@@ -86,6 +104,8 @@ namespace CircusPrototype
         void Update()
         {
             var show=FindFirstObjectByType<CircusSession>();bool introPause=show && show.State==ShowState.Paused;
+            if(patternPaused!=introPause){foreach(var voice in patternVoices){if(introPause)voice.Pause();else voice.UnPause();}patternPaused=introPause;}
+            if(!bossPatternSoundsEnabled || (show && (show.State==ShowState.Menu || show.State==ShowState.Victory || show.State==ShowState.Defeat)))StopBossPatterns();
             if(introPause!=introPaused){if(introPause)introVoice.Pause();else introVoice.UnPause();introPaused=introPause;}
             if(show && (show.State==ShowState.Menu || show.State==ShowState.Victory || show.State==ShowState.Defeat))introVoice.Stop();
             if(!effectsEnabled)

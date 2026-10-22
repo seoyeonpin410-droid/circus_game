@@ -8,6 +8,9 @@ namespace CircusPrototype
         [SerializeField,Range(0,1)] float finalLayerVolume=.45f;
         [SerializeField,Min(.1f)] float fadeSeconds=1.5f;
         [SerializeField,Min(.1f)] float introFadeOutSeconds=.4f,introBossFadeSeconds=.85f;
+        [SerializeField,Range(.3f,1)] float ultimateMusicGain=.65f;
+        [SerializeField,Range(1000,18000)] float ultimateLowPass=3500;
+        AudioLowPassFilter bossFilter,percussionFilter;
         AudioSource combat,boss,percussion;
         CircusSession session;
         bool paused;
@@ -17,7 +20,7 @@ namespace CircusPrototype
         void Awake()
         {
             session=GetComponent<CircusSession>();
-            combat=Make("Ordinary performance",combatLoop);boss=Make("Final performance",bossLoop);percussion=Make("Final percussion",finalPercussion);
+            combat=Make("Ordinary performance",combatLoop);boss=Make("Final performance",bossLoop);percussion=Make("Final percussion",finalPercussion);bossFilter=boss.gameObject.AddComponent<AudioLowPassFilter>();percussionFilter=percussion.gameObject.AddComponent<AudioLowPassFilter>();bossFilter.cutoffFrequency=percussionFilter.cutoffFrequency=22000;
         }
         AudioSource Make(string title,AudioClip clip)
         {
@@ -36,9 +39,12 @@ namespace CircusPrototype
             if(pause)return;
             var entry=session.Boss?session.Boss.GetComponent<CircusBossEntrance>():null;
             bool bossTime=session.Round==3 && (session.IsRunning || (session.State==ShowState.BossIntro && entry && entry.MusicAllowed));
-            bool normal=session.Round<3 && (session.IsRunning || (session.State==ShowState.Intermission && session.Round==1));
+            bool normal=!session.BossPath && (!session.ConnectedStage || session.StageFlow!=CircusStageFlow.Act2Clear) && session.Round<3 && (session.IsRunning || (session.State==ShowState.Intermission && session.Round==1));
             float main=normal?musicVolume:0,final=bossTime?musicVolume:0;
             var ai=session.Boss?session.Boss.GetComponent<CircusBoss>():null;
+            bool emphasis=ai && ai.MusicEmphasis;
+            if(emphasis)final*=ultimateMusicGain;
+            bossFilter.cutoffFrequency=percussionFilter.cutoffFrequency=Mathf.MoveTowards(bossFilter.cutoffFrequency,emphasis?ultimateLowPass:22000,Time.deltaTime*35000);
             float layer=bossTime && ai && ai.Phase==3?musicVolume*finalLayerVolume:0;
             Fade(combat,main,session.State==ShowState.BossIntro?introFadeOutSeconds:fadeSeconds);Fade(boss,final,session.State==ShowState.BossIntro?introBossFadeSeconds:fadeSeconds);Fade(percussion,layer,fadeSeconds);
         }

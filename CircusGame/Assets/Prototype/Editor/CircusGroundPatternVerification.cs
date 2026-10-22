@@ -25,6 +25,7 @@ public static class CircusGroundPatternVerification
         var prefab=AssetDatabase.LoadAssetAtPath<CircusEnemy>("Assets/Prototype/Prefabs/DokkaebiBoss.prefab");
         var enemy=Object.Instantiate(prefab,new Vector3(0,.06f,6),Quaternion.identity);enemy.Bind(session);
         var boss=enemy.GetComponent<CircusBoss>();
+        while(boss.IsInvulnerable)yield return null;enemy.TakeDamage(enemy.MaxHealth*.4f);yield return null;while(boss.IsInvulnerable)yield return null;
         typeof(CircusBoss).GetField("nextGround",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).SetValue(boss,0f);
         float deadline=Time.realtimeSinceStartup+10;
         while(Object.FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None).Length==0 && Time.realtimeSinceStartup<deadline)yield return null;
@@ -39,14 +40,14 @@ public static class CircusGroundPatternVerification
         Check(first && first.Phase==GroundFlamePhase.Burning,"Warning becomes burning floor after telegraph");
         Check(first.Center==center,"Marked location stays fixed after player moves");
         Check(session.Player.Health==before,"Leaving first circle avoids explosion damage");
-        Check(Object.FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None).Length==3,"Ground cast creates three delayed circles");
+        Check(Object.FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None).Length==4,"Ground cast creates four delayed circles");
         Check(first.Area.Contains(center+Vector3.forward*1.79f) && !first.Area.Contains(center+Vector3.forward*1.81f),"Circle radius matches damage boundary");
         Move(session.Player,center);yield return new WaitForSeconds(.9f);
         Check(session.Player.Health<before,"Standing in burning circle receives periodic damage");
         session.Pause();var phase=first.Phase;float health=session.Player.Health;
         yield return new WaitForSecondsRealtime(.35f);
         Check(first && first.Phase==phase && session.Player.Health==health,"Pause freezes hazard lifetime and damage");
-        session.Resume();yield return new WaitForSeconds(.6f);
+        session.Resume();yield return new WaitForSeconds(1.3f);
         Check(!first,"Burning circle expires on schedule");
         enemy.TakeDamage(10000);yield return new WaitForSeconds(.1f);
         Check(Object.FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None).Length==0,"Boss death clears remaining circles");

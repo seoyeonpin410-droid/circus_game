@@ -4,7 +4,7 @@ using UnityEngine;
 namespace CircusPrototype
 {
     public enum ShowState { Menu, Countdown, Playing, Intermission, Paused, Victory, Defeat, BossIntro, BossDefeated }
-    public sealed class CircusSession : MonoBehaviour
+    public sealed partial class CircusSession : MonoBehaviour
     {
         [SerializeField] CircusPlayer player;
         [SerializeField] CircusEnemy closeEnemy, rangedEnemy, bossPrefab;
@@ -33,7 +33,7 @@ namespace CircusPrototype
         public IReadOnlyList<CircusEnemy> Enemies => enemies;
         public CircusEnemy Boss { get; private set; }
         public int Round => round + 1;
-        public int Remaining => round == 2 ? (Boss && Boss.Health > 0 ? 1 : 0) : Mathf.Max(0, roundCounts[Mathf.Min(round, 1)] - defeated);
+        public int Remaining => ConnectedStage && round<2 ? Mathf.Max(0,waveTotal-waveDeaths) : round == 2 ? (Boss && Boss.Health > 0 ? 1 : 0) : Mathf.Max(0, roundCounts[Mathf.Min(round, 1)] - defeated);
         public int Alive => enemies.Count;
         public int Spawned => spawned;
         public int Score => score;
@@ -63,7 +63,7 @@ namespace CircusPrototype
         {
             ClearShow(); round = score = spawned = defeated = 0;
             GameplaySeconds = 0; infected = false; player.ResetPerformer();
-            State = ShowState.Countdown; hud.CloseSettings(); roundRoutine = StartCoroutine(RunShow());
+            ResetStage();PlaceAtStageStart(); State = ShowState.Countdown; hud.CloseSettings(); roundRoutine = StartCoroutine(RunShow());
         }
         IEnumerator RunShow()
         {
@@ -77,6 +77,7 @@ namespace CircusPrototype
             CountdownText = "START!"; CircusAudio.Play(CircusCue.Start); State = ShowState.Playing;
             hud.Announce("1막 · 무대 위의 랑", 2);
             yield return new WaitForSeconds(.5f); CountdownText = "";
+            if(ConnectedStage){yield return RunConnectedStage();yield break;}
             for (round = 0; round < 3; round++)
             {
                 spawned = defeated = 0;
@@ -92,19 +93,7 @@ namespace CircusPrototype
                 }
                 else
                 {
-                    State = ShowState.BossIntro;
-                    ClearProjectiles();
-                    foreach(var hazard in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))Destroy(hazard.gameObject);
-                    PlacePlayerForBoss();
-                    Boss = Instantiate(bossPrefab, bossLandingPosition, Quaternion.identity);
-                    Boss.Bind(this); enemies.Add(Boss); spawned = 1;
-                    hud.Announce("3막 - BOSS",Boss.GetComponent<CircusBoss>().Entrance.QuietSeconds);
-                    yield return new WaitUntil(()=>State!=ShowState.Paused && (!Boss || Boss.GetComponent<CircusBoss>().Entrance.Complete));
-                    State = ShowState.Playing;
-                    while (Boss && Boss.Health > 0) yield return null;
-                    State=ShowState.BossDefeated;ClearProjectiles();
-                    hud.Announce("도깨비 대장 · 마지막 공연이 끝난다",Boss?Boss.GetComponent<CircusBoss>().DeathSeconds:1.5f);
-                    while(Boss)yield return null;
+                    yield return RunBossEncounter();
                     break;
                 }
                 State = ShowState.Intermission; ClearProjectiles();
@@ -114,6 +103,22 @@ namespace CircusPrototype
                 CircusAudio.Play(CircusCue.ActChange); State = ShowState.Playing;
             }
             State = ShowState.Victory; ClearProjectiles(); hud.Announce("3막 완료 · 게임 클리어", 0); CircusAudio.Play(CircusCue.Clear);
+        }
+        IEnumerator RunBossEncounter()
+        {
+            State = ShowState.BossIntro;
+            ClearProjectiles();
+            foreach(var hazard in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))Destroy(hazard.gameObject);
+            PlacePlayerForBoss();
+            Boss = Instantiate(bossPrefab, bossLandingPosition, Quaternion.identity);
+            Boss.Bind(this); enemies.Add(Boss); spawned = 1;
+            hud.Announce("3막 - BOSS",Boss.GetComponent<CircusBoss>().Entrance.QuietSeconds);
+            yield return new WaitUntil(()=>State!=ShowState.Paused && (!Boss || Boss.GetComponent<CircusBoss>().Entrance.Complete));
+            State = ShowState.Playing; if(ConnectedStage)StageFlow=CircusStageFlow.BossBattle;
+            while (Boss && Boss.Health > 0) yield return null;
+            State=ShowState.BossDefeated;ClearProjectiles();
+            hud.Announce("도깨비 대장 · 마지막 공연이 끝난다",Boss?Boss.GetComponent<CircusBoss>().DeathSeconds:1.5f);
+            while(Boss)yield return null;
         }
         void PlacePlayerForBoss() {
             var delta=player.transform.position-bossLandingPosition;delta.y=0;
@@ -134,7 +139,7 @@ namespace CircusPrototype
         }
         public CircusEnemy SpawnNext()
         {
-            if (!IsRunning || round > 1 || spawned >= roundCounts[round]) return null;
+            if (ConnectedStage || !IsRunning || round > 1 || spawned >= roundCounts[round]) return null;
             var candidates = new List<Transform>();
             foreach (var point in spawnPoints)
             {
@@ -152,6 +157,7 @@ namespace CircusPrototype
         public void EnemyDefeated(CircusEnemy enemy)
         {
             if (!enemies.Remove(enemy)) return;
+            if(ConnectedStage && ActiveArea && enemy.CombatArea==ActiveArea)waveDeaths++;
             defeated++; score += enemy.IsBoss ? 1200 : enemy.IsRanged ? 150 : 100;
         }
         public void HealthChanged()
@@ -169,7 +175,7 @@ namespace CircusPrototype
         public void Pause() { if (!CanPause) return; hitStopRemaining=0;pausedFrom = State; State = ShowState.Paused; Time.timeScale = 0; }
         public void TogglePause() { if (State == ShowState.Paused) Resume(); else Pause(); }
         public void Resume() { if (State != ShowState.Paused) return; State = pausedFrom; Time.timeScale = 1; }
-        public void ReturnToMenu() { ClearShow(); State = ShowState.Menu; hud.CloseSettings(); player.ResetPerformer(); }
+        public void ReturnToMenu() { ClearShow(); State = ShowState.Menu; hud.CloseSettings(); player.ResetPerformer(); if(bossBackdrop)bossBackdrop.SetActive(true); }
         public void Quit()
         {
             #if UNITY_EDITOR
@@ -183,8 +189,10 @@ namespace CircusPrototype
             hitStopRemaining=0;HitStopCount=0;Time.timeScale = 1; if (roundRoutine != null) StopCoroutine(roundRoutine);
             foreach (var enemy in enemies) if (enemy) Destroy(enemy.gameObject);
             if(Boss)Destroy(Boss.gameObject);
-            enemies.Clear(); Boss = null; CountdownText = ""; CountdownRemaining = 0;
-            ClearProjectiles(); CircusAudio.StopFlights();
+            enemies.Clear(); Boss = null;ResetStage(); CountdownText = ""; CountdownRemaining = 0;
+            ClearProjectiles(); CircusAudio.StopFlights();CircusAudio.StopBossPatterns();
+            foreach(var field in FindObjectsByType<CircusSafeField>(FindObjectsSortMode.None))field.Cancel();
+            foreach(var flame in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))flame.Cancel();
         }
         void ClearProjectiles()
         {

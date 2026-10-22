@@ -27,6 +27,8 @@ namespace CircusPrototype
         public bool Winding=>winding;
         float nextAttack, maxHealth, verticalSpeed, windupUntil;
         bool dead, winding;
+        public CircusCombatArea CombatArea {get;private set;}
+        public void BindArea(CircusCombatArea area){CombatArea=area;}
         public bool IsRanged=>ranged;
         public bool IsBoss=>GetComponent<CircusBoss>()!=null;
         public float Health=>health;
@@ -81,6 +83,7 @@ namespace CircusPrototype
             }
             if(!session || !session.Player || !session.IsRunning || dead) { if(area) area.Hide(); if(warning) warning.enabled=false; return; }
             if(IsBoss) return;
+            if(CombatArea && (CombatArea.State!=CircusAreaState.Battle || !CombatArea.Contains(session.Player.transform.position))){area.Hide();if(charge)charge.Hide();return;}
             var direction=session.Player.transform.position-transform.position; direction.y=0;
             if(winding)
             {
@@ -119,7 +122,16 @@ namespace CircusPrototype
                 }
                 if(controller.isGrounded && verticalSpeed<0) verticalSpeed=-2;
                 verticalSpeed-=20*Time.deltaTime;
-                controller.Move((Vector3.ClampMagnitude(movement,1)*moveSpeed+Vector3.up*verticalSpeed)*Time.deltaTime);
+                movement=Vector3.ClampMagnitude(movement,1);
+                if(CombatArea && movement.sqrMagnitude>.01f && Physics.SphereCast(transform.position+Vector3.up,.35f,movement.normalized,out var obstacle,1.2f,1<<0,QueryTriggerInteraction.Ignore)){
+                    var left=Quaternion.Euler(0,-70,0)*movement;var right=Quaternion.Euler(0,70,0)*movement;
+                    bool clearLeft=!Physics.SphereCast(transform.position+Vector3.up,.35f,left.normalized,out var a,1.2f,1<<0,QueryTriggerInteraction.Ignore);
+                    bool clearRight=!Physics.SphereCast(transform.position+Vector3.up,.35f,right.normalized,out var b,1.2f,1<<0,QueryTriggerInteraction.Ignore);
+                    movement=clearLeft && clearRight?(Vector3.Dot(left,direction)>Vector3.Dot(right,direction)?left:right):clearLeft?left:clearRight?right:Vector3.zero;
+                }
+                var step=movement*moveSpeed*Time.deltaTime;
+                if(CombatArea){var target=CombatArea.Clamp(transform.position+step,.8f);step.x=target.x-transform.position.x;step.z=target.z-transform.position.z;}
+                controller.Move(step+Vector3.up*verticalSpeed*Time.deltaTime);
             }
             if(model && direction.sqrMagnitude>.001f) model.rotation=Quaternion.LookRotation(direction);
             if(Time.time<nextAttack || (!ranged && direction.magnitude>meleeRange)) return;

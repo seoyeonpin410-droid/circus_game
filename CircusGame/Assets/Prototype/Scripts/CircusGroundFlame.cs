@@ -39,6 +39,7 @@ namespace CircusPrototype
             hazard.rimMaterial.SetColor("_BaseColor",new Color(.8f,.35f,1));
             return hazard;
         }
+        public void Cancel(){Phase=GroundFlamePhase.Finished;enabled=false;Destroy(gameObject);}
         void Update()
         {
             if (!session || !owner || owner.Health<=0 || session.State==ShowState.Menu
@@ -54,7 +55,7 @@ namespace CircusPrototype
                 return;
             }
             if(age>=warningSeconds+burnSeconds) { Phase=GroundFlamePhase.Finished; Destroy(gameObject); return; }
-            if(Phase!=GroundFlamePhase.Burning) CircusImpact.Create(Center+Vector3.up*.15f,new Color(1,.4f,.07f));
+            if(Phase!=GroundFlamePhase.Burning) {CircusImpact.Create(Center+Vector3.up*.15f,new Color(1,.4f,.07f));CircusAudio.PlayBossPattern(CircusBossSound.GroundImpact,Center);}
             Phase=GroundFlamePhase.Burning;
             area.Show(Center,Vector3.forward,area.Radius,180,new Color(1,.22f,.07f,.45f+.08f*Mathf.Sin(age*16)));
             rimMaterial.SetColor("_BaseColor",new Color(1,.55f,.12f));

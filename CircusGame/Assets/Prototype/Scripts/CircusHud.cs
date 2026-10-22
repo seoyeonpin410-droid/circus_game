@@ -92,7 +92,7 @@ namespace CircusPrototype
             healthFill.color = session.Infected ? new Color(.35f, .8f, .43f) : new Color(.78f, .18f, .23f);
             healthText.text = $"{(session.Infected ? "감염" : "체력")}  {Mathf.CeilToInt(hp)} / 100";
             roundText.text = session.Round == 3 ? "3막 - Boss" : $"제{session.Round}막 / 3";
-            remainingText.text = session.Round == 3 ? "도깨비 대장을 쓰러뜨리세요" : $"남은 랑 {session.Remaining:00}   ·   무대 위 {session.Alive:00}";
+            remainingText.text = session.Round == 3 ? "도깨비 대장을 쓰러뜨리세요" : $"남은 랑 {session.Remaining:00}   ·   무대 위 {session.Alive:00}" + (session.ConnectedStage ? "\n"+session.StageHint : "");
             scoreText.text = $"점수 {session.Score:0000}";
             rangedLegend.SetActive(session.Round > 1);
             var entry=session.Boss?session.Boss.GetComponent<CircusBossEntrance>():null;

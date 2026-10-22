@@ -46,6 +46,7 @@ namespace CircusPrototype
             if(flight) flight.transform.position=transform.position;
             age+=Time.deltaTime; if(age>=life) Destroy(gameObject);
         }
+        public void Cancel(){enabled=false;Destroy(gameObject);}
         void OnDestroy() { if(flight) flight.Stop(); }
     }
 }

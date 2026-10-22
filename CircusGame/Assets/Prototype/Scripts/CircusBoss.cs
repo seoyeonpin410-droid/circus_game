@@ -4,7 +4,7 @@ using UnityEngine;
 namespace CircusPrototype
 {
     public enum BossAction { Entrance, Chase, MeleeWindup, RangedWindup, Recovery, Dead, GroundCast, Idle, MeleeAttack, RangedAttack, PhaseTransition, PatternSelect, SpecialWindup, SpecialAttack }
-    public enum BossPattern { Swing, Slam, SingleFlame, FanFlame, HomingFlames, Charge, DoubleSwing, RingFlames, GroundSeals }
+    public enum BossPattern { Swing, Slam, SingleFlame, FanFlame, HomingFlames, Charge, DoubleSwing, RingFlames, GroundSeals, SequentialFlames, MultiDash, SafeZones, OrbitVolley, Finale }
     [Serializable]
     public sealed class BossPatternSettings
     {
@@ -16,7 +16,7 @@ namespace CircusPrototype
         {this.damage=damage;this.windup=windup;this.recovery=recovery;this.cooldown=cooldown;this.range=range;this.speed=speed;this.projectiles=projectiles;this.spread=spread;}
     }
     [RequireComponent(typeof(CircusEnemy),typeof(CharacterController))]
-    public sealed class CircusBoss : MonoBehaviour
+    public sealed partial class CircusBoss : MonoBehaviour
     {
         [Header("Movement and phases")]
         [SerializeField] float moveSpeed=2.1f,rangedDistance=6,meleeHalfAngle=65;
@@ -85,7 +85,9 @@ namespace CircusPrototype
             switch(p) {
                 case BossPattern.Swing:return swing;case BossPattern.Slam:return slam;case BossPattern.SingleFlame:return singleFlame;
                 case BossPattern.FanFlame:return fanFlame;case BossPattern.HomingFlames:return homingFlames;case BossPattern.Charge:return dash;
-                case BossPattern.DoubleSwing:return doubleSwing;case BossPattern.RingFlames:return ringFlames;default:return groundSeals;
+                case BossPattern.DoubleSwing:return doubleSwing;case BossPattern.RingFlames:return ringFlames;
+                case BossPattern.SequentialFlames:return sequentialFlames;case BossPattern.MultiDash:return multiDash;case BossPattern.SafeZones:return safeZones;
+                case BossPattern.OrbitVolley:return orbitVolley;case BossPattern.Finale:return finale;default:return groundSeals;
             }
         }
         float SpeedScale=>Phase==3?phaseThreeSpeed:Phase==2?phaseTwoSpeed:1;
@@ -96,7 +98,7 @@ namespace CircusPrototype
             area=CircusAttackArea.Create("Boss danger area",transform);renderers=enemy.Model.GetComponentsInChildren<Renderer>();baseScale=enemy.Model.localScale;modelRest=enemy.Model.localPosition;
             for(int i=0;i<12;i++)charges.Add(CircusCharge.Create(transform,Vector3.up*2.1f,true));
             Phase=1;Action=BossAction.Entrance;started=Time.time;until=Time.time+EntranceSeconds;nextGround=until+groundSeals.cooldown;
-            entrance=GetComponent<CircusBossEntrance>();if(!entrance)entrance=gameObject.AddComponent<CircusBossEntrance>();entrance.Bind(session,enemy);
+            entrance=GetComponent<CircusBossEntrance>();if(!entrance)entrance=gameObject.AddComponent<CircusBossEntrance>();entrance.Bind(session,enemy);ResetExpanded();
         }
         Vector3 ToPlayer { get { var v=session.Player.transform.position-transform.position;v.y=0;return v; } }
         void Glow(float intensity)
@@ -111,13 +113,15 @@ namespace CircusPrototype
         {
             foreach(var p in FindObjectsByType<CircusProjectile>(FindObjectsSortMode.None))if(p.Owner==enemy)return true;
             foreach(var h in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))if(h.Owner==enemy)return true;
+            foreach(var f in FindObjectsByType<CircusSafeField>(FindObjectsSortMode.None))if(f.Owner==enemy)return true;
             return false;
         }
         public void ClearHazards()
         {
             if(ReferenceEquals(enemy,null))return;
-            foreach(var p in FindObjectsByType<CircusProjectile>(FindObjectsSortMode.None))if(ReferenceEquals(p.Owner,enemy))Destroy(p.gameObject);
-            foreach(var h in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))if(ReferenceEquals(h.Owner,enemy))Destroy(h.gameObject);
+            foreach(var p in FindObjectsByType<CircusProjectile>(FindObjectsSortMode.None))if(ReferenceEquals(p.Owner,enemy))p.Cancel();
+            foreach(var h in FindObjectsByType<CircusGroundFlame>(FindObjectsSortMode.None))if(ReferenceEquals(h.Owner,enemy))h.Cancel();
+            foreach(var f in FindObjectsByType<CircusSafeField>(FindObjectsSortMode.None))if(ReferenceEquals(f.Owner,enemy))f.Cancel();
         }
         void Update()
         {
@@ -150,10 +154,14 @@ namespace CircusPrototype
             {
                 Glow(.08f*(Phase-1));
                 RelaxPose(Mathf.SmoothStep(0,1,(Time.time-started)/Mathf.Max(.05f,Pattern==BossPattern.Slam?slamPoseRecovery:poseRecoverySeconds)));
-                if(Time.time<until || ActiveHazards())return;
+                if(Time.time<until || (ActiveHazards() && !(followup.HasValue && CanOverlapGround(followup.Value))))return;
                 Action=BossAction.Chase;
                 retreating=Phase==3 && (Pattern==BossPattern.Swing || Pattern==BossPattern.DoubleSwing);
                 until=Time.time+(retreating?Mathf.Max(.8f,positionSeconds):positionSeconds);return;
+            }
+            if(betweenDashes) {
+                RelaxPose(Mathf.SmoothStep(0,1,(Time.time-dashGapStarted)/Mathf.Max(.1f,multiDashGap)));
+                if(Time.time>=until){betweenDashes=false;BeginWindup();}return;
             }
             if(Action==BossAction.Idle && Pattern==BossPattern.DoubleSwing && comboStep==1)
             { RelaxPose(Mathf.SmoothStep(0,1,(Time.time-(nextRelease-comboGap))/Mathf.Max(.01f,comboGap)));if(Time.time>=nextRelease)BeginWindup();return; }
@@ -161,7 +169,7 @@ namespace CircusPrototype
             {
                 var toward=arenaCenter-transform.position;toward.y=0;
                 lockedDirection=toward.sqrMagnitude>.01f?toward.normalized:lockedDirection;Pose(0);Glow(.3f);
-                if(toward.magnitude<=centerStopDistance || Time.time>=until){centering=false;BeginWindup();}
+                if(toward.magnitude<=centerStopDistance || Time.time>=until){centering=false;if(CustomPattern(Pattern))BeginCustomWindup();else BeginWindup();}
                 else Move(toward.normalized*moveSpeed*SpeedScale);
                 return;
             }
@@ -169,21 +177,22 @@ namespace CircusPrototype
             {
                 Glow(.15f*(Phase-1));
                 var d=ToPlayer;lockedDirection=d.sqrMagnitude>.01f?d.normalized:transform.forward;Pose(0);
-                if(Action==BossAction.Chase && (d.magnitude>3 || retreating))Move((retreating?-1:1)*d.normalized*moveSpeed*SpeedScale);
+                if(Action==BossAction.Chase && !(Pattern==BossPattern.GroundSeals && followup==BossPattern.SingleFlame) && (d.magnitude>3 || retreating))Move((retreating?-1:1)*d.normalized*moveSpeed*SpeedScale);
                 if(Time.time>=until)Action=BossAction.PatternSelect;return;
             }
             if(Action==BossAction.PatternSelect){SelectPattern();return;}
+            if(CustomPattern(Pattern)){TickCustom();return;}
             var config=Settings(Pattern);
             if(Action==BossAction.MeleeWindup || Action==BossAction.SpecialWindup || Action==BossAction.RangedWindup)
             {
-                float progress=1-Mathf.Clamp01((until-Time.time)/Mathf.Max(.1f,config.windup));
+                float progress=1-Mathf.Clamp01((until-Time.time)/Mathf.Max(.1f,windupDuration));
                 Glow(.08f+progress*.22f);
                 if(Pattern==BossPattern.Swing || Pattern==BossPattern.DoubleSwing) {
                     float sign=comboStep==0?1:-1;Pose(-6*progress,-meleeTwist*sign*progress);Offset(-lockedDirection*.05f*progress);
                 } else if(Pattern==BossPattern.Slam) {
                     enemy.Model.localPosition=modelRest+Vector3.up*(slamLift*Mathf.SmoothStep(0,1,progress));Pose(-18*progress);
                     area.ShowSlam(attackOrigin,config.range,progress);
-                } else if(Pattern==BossPattern.Charge) {
+                } else if(IsDash(Pattern)) {
                     Offset(-lockedDirection*dashPullback*progress-Vector3.up*dashCrouch*progress);Pose(18*progress);
                     enemy.Model.localScale=Vector3.Scale(baseScale,new Vector3(1,1-.025f*progress,1));
                 } else if(Pattern==BossPattern.GroundSeals) {
@@ -216,7 +225,7 @@ namespace CircusPrototype
             }
             if(Action==BossAction.SpecialAttack)
             {
-                if(Pattern==BossPattern.Charge){UpdateDash();return;}
+                if(IsDash(Pattern)){UpdateDash();return;}
                 if(Pattern==BossPattern.Slam){
                     float t=Mathf.Clamp01((Time.time-started)/Mathf.Max(.03f,slamDropSeconds));
                     enemy.Model.localPosition=modelRest+Vector3.up*slamLift*(1-t*t*t);Pose(Mathf.Lerp(-18,16,t));
@@ -234,31 +243,32 @@ namespace CircusPrototype
             }
             if(Action==BossAction.GroundCast)
             {
-                if(shotIndex<Mathf.Clamp(config.projectiles,1,5) && Time.time>=nextRelease)
+                if(shotIndex<groundPlan.Count && Time.time>=nextRelease)
                 {
-                    CircusGroundFlame.Create(session,enemy,session.Player.transform.position,config.range,config.windup,groundDuration,config.damage);
+                    CircusGroundFlame.Create(session,enemy,groundPlan[shotIndex],config.range,hazardWarningSeconds,groundDuration,config.damage);
                     shotIndex++;nextRelease=Time.time+groundInterval;
                 }
-                if(shotIndex>=Mathf.Clamp(config.projectiles,1,5) && Time.time>=nextRelease)FinishPattern();
+                if(shotIndex>=groundPlan.Count && Time.time>=nextRelease)FinishPattern();
             }
         }
         void BeginTransition(int phase)
         {
-            Phase=phase;PhaseTransitions++;Action=BossAction.PhaseTransition;started=Time.time;until=Time.time+transitionSeconds;
+            CancelExpanded();CircusAudio.StopBossPatterns();Phase=phase;PhaseTransitions++;if(Phase==3)ultimateQueued=true;Action=BossAction.PhaseTransition;started=Time.time;until=Time.time+transitionSeconds;
             enemy.Model.localPosition=modelRest;enemy.Model.localScale=baseScale;HideWarnings();ClearHazards();comboStep=0;followup=null;centering=false;
             FindFirstObjectByType<CircusHud>()?.Announce($"도깨비 대장 · {Phase}페이즈",transitionSeconds+1);
             CircusBossVfx.Ring(session,transform.position,new Color(.2f,1,.7f),3,.8f);
-            CircusAudio.Play(CircusCue.PhaseShift,transform.position);CircusAudio.Play(CircusCue.Warning,transform.position,.4f);
+            FindFirstObjectByType<CircusCamera>()?.Shake(Phase==3?.03f:.018f,.15f);CircusAudio.PlayBossPattern(CircusBossSound.PhaseShift,transform.position);CircusAudio.Play(CircusCue.PhaseShift,transform.position);CircusAudio.Play(CircusCue.Warning,transform.position,.4f);
         }
         bool IsFlame(BossPattern p)=>p==BossPattern.SingleFlame || p==BossPattern.FanFlame || p==BossPattern.HomingFlames || p==BossPattern.RingFlames;
         public bool CanUse(BossPattern p)
         {
             if(!session || !session.IsRunning || Action==BossAction.Dead || (lastPattern.HasValue && lastPattern.Value==p))return false;
             if(ready.TryGetValue(p,out var time) && Time.time<time)return false;
+            if(Heavy(p) && Time.time<heavyBlockedUntil)return false;
+            if(CustomPattern(p) || p==BossPattern.MultiDash)return ExpandedAllowed(p);
             float distance=ToPlayer.magnitude;
-            if((p==BossPattern.HomingFlames || p==BossPattern.Charge || p==BossPattern.DoubleSwing) && Phase<2)return false;
+            if((p==BossPattern.HomingFlames || p==BossPattern.GroundSeals || p==BossPattern.DoubleSwing) && Phase<2)return false;
             if(p==BossPattern.RingFlames)return Phase==3 && distance>=3;
-            if(p==BossPattern.FanFlame && Phase==1 && enemy.Health/enemy.MaxHealth>.85f)return false;
             if(p==BossPattern.Swing || p==BossPattern.DoubleSwing)return distance<=Settings(p).range-.2f;
             if(p==BossPattern.Slam)return distance<=slam.range;
             if(p==BossPattern.Charge)return distance>=3.5f && distance<=dash.range+1;
@@ -267,12 +277,15 @@ namespace CircusPrototype
         }
         public bool TryStartPattern(BossPattern p)
         {
+            if(betweenDashes)return false;
             if(Action==BossAction.Idle && Pattern==BossPattern.DoubleSwing && comboStep==1)return false;
             if(centering)return false;
             if(Action!=BossAction.PatternSelect && Action!=BossAction.Chase && Action!=BossAction.Idle)return false;
-            if(Time.time<until || ActiveHazards() || !CanUse(p))return false;
+            if(Time.time<until || (ActiveHazards() && !CanOverlapGround(p)) || !CanUse(p))return false;
             Pattern=p;history.Add(p);lastPattern=p;comboStep=shotIndex=0;
-            ready[p]=Time.time+Settings(p).cooldown*CooldownScale;
+            ready[p]=Time.time+(p==BossPattern.Finale?Mathf.Max(15,Settings(p).cooldown):Settings(p).cooldown*CooldownScale);
+            dashPart=0;
+            if(CustomPattern(p)){if(p==BossPattern.Finale)ultimateQueued=false;BeginCustom();return true;}
             if(p==BossPattern.GroundSeals)
             {
                 BeginWindup();return true;
@@ -286,8 +299,9 @@ namespace CircusPrototype
         }
         void SelectPattern()
         {
+            if(Phase==3 && ultimateQueued && TryStartPattern(BossPattern.Finale))return;
             if(nextGround<=0 && TryStartPattern(BossPattern.GroundSeals))return;
-            if(followup.HasValue){var p=followup.Value;followup=null;if(TryStartPattern(p))return;}
+            if(followup.HasValue){var p=followup.Value;if(TryStartPattern(p)){followup=null;CombosStarted++;return;}followup=null;}
             candidates.Clear();
             foreach(BossPattern p in Enum.GetValues(typeof(BossPattern)))if(CanUse(p))candidates.Add(p);
             if(candidates.Count>0)
@@ -299,7 +313,7 @@ namespace CircusPrototype
         }
         void BeginWindup()
         {
-            var config=Settings(Pattern);HideWarnings();started=Time.time;until=Time.time+Mathf.Max(.35f,config.windup);
+            var config=Settings(Pattern);HideWarnings();started=Time.time;windupDuration=WindupSeconds(config);until=Time.time+windupDuration;
             lockedDirection=ToPlayer.sqrMagnitude>.001f?ToPlayer.normalized:enemy.Model.forward;attackOrigin=transform.position;enemy.Model.localPosition=modelRest;enemy.Model.localScale=baseScale;Pose(0);
             if(Pattern==BossPattern.Swing || Pattern==BossPattern.DoubleSwing)
             {
@@ -313,14 +327,14 @@ namespace CircusPrototype
                 Action=BossAction.SpecialWindup;slamContact=false;area.ShowSlam(attackOrigin,config.range,0);
                 CircusAudio.Play(CircusCue.SlamPrepare,transform.position);
             }
-            else if(Pattern==BossPattern.Charge)
+            else if(IsDash(Pattern))
             {
-                Action=BossAction.SpecialWindup;dashTravel=0;dashHit=false;
+                Action=BossAction.SpecialWindup;dashTravel=0;dashHit=false;CircusAudio.PlayBossPattern(CircusBossSound.DashPrepare,transform.position);
                 area.ShowLane(attackOrigin,lockedDirection,config.range,dashWidth,new Color(1,.2f,.1f,.4f));
                 CircusAudio.Play(CircusCue.DashPrepare,transform.position);
             }
             else if(Pattern==BossPattern.GroundSeals) {
-                Action=BossAction.SpecialWindup;OrbitCharges(3,1.8f);
+                Action=BossAction.SpecialWindup;PlanGround();OrbitCharges(3,1.8f);CircusAudio.PlayBossPattern(CircusBossSound.GroundMark,transform.position);
                 FindFirstObjectByType<CircusHud>()?.Announce("도깨비불 장판 · 보라색 원을 벗어나세요",2);
             }
             else
@@ -361,8 +375,8 @@ namespace CircusPrototype
             {
                 Action=BossAction.SpecialAttack;started=Time.time;until=Time.time+slamDropSeconds;return;
             }
-            if(Pattern==BossPattern.Charge)
-            { Offset(Vector3.zero);enemy.Model.localScale=baseScale;Pose(18);Action=BossAction.SpecialAttack;dashPrevious=transform.position;CircusAudio.Play(CircusCue.BossDash,transform.position);return; }
+            if(IsDash(Pattern))
+            { Offset(Vector3.zero);enemy.Model.localScale=baseScale;Pose(18);Action=BossAction.SpecialAttack;dashPrevious=transform.position;if(rushTrail){rushTrail.Clear();rushTrail.emitting=true;}CircusAudio.PlayBossPattern(CircusBossSound.DashRelease,transform.position);CircusAudio.Play(CircusCue.BossDash,transform.position);return; }
             if(Pattern==BossPattern.GroundSeals) {
                 HideWarnings();GroundAttacks++;Action=BossAction.GroundCast;nextRelease=Time.time;nextGround=Time.time+groundSeals.cooldown;return;
             }
@@ -406,17 +420,13 @@ namespace CircusPrototype
             if(!dashHit && area.Contains(session.Player.transform.position) && Vector3.Distance(p,a+segment*t)<=dashWidth*.5f)
             { session.Player.TakeDamage(dash.damage);dashHit=true; }
             if(dashTravel>=dash.range-.05f || (flags&CollisionFlags.Sides)!=0 || step<.001f)
-            {area.Hide();FinishPattern();}
+            {FinishDash();}
         }
         void FinishPattern()
         {
             HideWarnings();comboStep=0;
-            if(Phase==3)
-            {
-                if(Pattern==BossPattern.SingleFlame || Pattern==BossPattern.FanFlame)followup=BossPattern.Charge;
-                if(Pattern==BossPattern.Swing || Pattern==BossPattern.DoubleSwing)followup=BossPattern.FanFlame;
-            }
-            Recover(Mathf.Max(.7f,Settings(Pattern).recovery));
+            ChooseCombo();
+            Recover(Mathf.Max(.35f,Settings(Pattern).recovery));
         }
         void Offset(Vector3 worldOffset){enemy.Model.localPosition=modelRest+enemy.Model.parent.InverseTransformVector(worldOffset);}
         void CacheRecoveryPose(){recoveryPosition=enemy.Model.localPosition;recoveryRotation=enemy.Model.localRotation;}
@@ -430,11 +440,11 @@ namespace CircusPrototype
         public void BeginDeath()
         {
             if(Action==BossAction.Dead)return;
-            enemy.Model.localPosition=modelRest;Action=BossAction.Dead;started=Time.time;until=Time.time+DeathSeconds;HideWarnings();ClearHazards();followup=null;centering=false;
+            CancelExpanded();CircusAudio.StopBossPatterns();enemy.Model.localPosition=modelRest;enemy.Model.localScale=baseScale;Action=BossAction.Dead;started=Time.time;until=Time.time+DeathSeconds;HideWarnings();ClearHazards();followup=null;centering=false;
             if(controller)controller.enabled=false;
             CircusBossVfx.Ring(session,transform.position,new Color(.2f,1,.65f),5,deathSeconds);
             CircusAudio.Play(CircusCue.BossDeath,transform.position);
         }
-        void OnDestroy(){ClearHazards();}
+        void OnDestroy(){CancelExpanded();ClearHazards();}
     }
 }

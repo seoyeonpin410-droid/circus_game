@@ -60,8 +60,8 @@ public static class CircusPresentationVerification
         Check(player.Health==hp-boss.Settings(BossPattern.Slam).damage && Mathf.Abs(owner.Model.localPosition.y-rest.y)<.001f,"Slam damage occurs exactly at ground contact");
         Check(!boss.AttackArea.Visible && Object.FindFirstObjectByType<CircusBossVfx>() && Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None).Any(p=>p.name=="Dust"),"Ground contact removes warning and creates shockwave and dust");
         Check(boss.Action==BossAction.Recovery && !boss.TryStartPattern(BossPattern.Swing),"Ground contact opens a long recovery instead of chaining an attack");
-        yield return new WaitForSeconds(1.1f);Check(boss.Action==BossAction.Recovery,"Slam recovery lasts longer than one second");
-        Check(owner.MaxHealth==900 && boss.Settings(BossPattern.Slam).damage==22 && player.BossDamageScale==.5f,"Serialized balance protects both sides from a few lethal hits");
+        yield return new WaitForSeconds(.8f);Check(boss.Action==BossAction.Recovery,"Slam leaves a visible counterattack window");
+        Check(owner.MaxHealth==1000 && boss.Settings(BossPattern.Slam).damage==22 && player.BossDamageScale==.4f,"Serialized balance protects both sides from a few lethal hits");
         var audio=new SerializedObject(session.GetComponent<CircusAudio>());
         Check(!audio.FindProperty("effectsEnabled").boolValue && audio.FindProperty("combatAccentsEnabled").boolValue && audio.FindProperty("meleeImpactClip").objectReferenceValue && audio.FindProperty("slamImpactClip").objectReferenceValue,"Only two quiet combat accents enabled; previous effects remain disabled");
         Object.Destroy(owner.gameObject);session.ReturnToMenu();yield return null;

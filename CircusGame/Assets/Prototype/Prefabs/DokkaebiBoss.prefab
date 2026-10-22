@@ -464,7 +464,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CircusPrototype.CircusEnemy
   ranged: 0
-  health: 900
+  health: 1000
   attackInterval: 2.3
   meleeRange: 2.2
   moveSpeed: 2.6
@@ -519,11 +519,11 @@ MonoBehaviour:
   meleeHalfAngle: 65
   phaseTwoHealth: 0.7
   phaseThreeHealth: 0.35
-  phaseTwoSpeed: 1.15
-  phaseThreeSpeed: 1.2
-  phaseTwoCooldown: 0.9
-  phaseThreeCooldown: 0.85
-  transitionSeconds: 1.2
+  phaseTwoSpeed: 1.05
+  phaseThreeSpeed: 1.15
+  phaseTwoCooldown: 0.98
+  phaseThreeCooldown: 0.92
+  transitionSeconds: 1.1
   entranceSeconds: 4.1
   deathSeconds: 1.5
   positionSeconds: 0.45
@@ -532,7 +532,7 @@ MonoBehaviour:
   swing:
     damage: 16
     windup: 0.55
-    recovery: 0.9
+    recovery: 0.45
     cooldown: 2
     range: 3.8
     speed: 8.5
@@ -541,7 +541,7 @@ MonoBehaviour:
   slam:
     damage: 22
     windup: 0.9
-    recovery: 1.6
+    recovery: 1
     cooldown: 7
     range: 4.2
     speed: 8.5
@@ -550,16 +550,16 @@ MonoBehaviour:
   singleFlame:
     damage: 10
     windup: 0.6
-    recovery: 0.9
-    cooldown: 3
+    recovery: 0.5
+    cooldown: 3.5
     range: 16
     speed: 8.5
     projectiles: 1
     spread: 17
   fanFlame:
     damage: 10
-    windup: 0.65
-    recovery: 1.1
+    windup: 0.7
+    recovery: 0.65
     cooldown: 6
     range: 16
     speed: 8
@@ -567,18 +567,18 @@ MonoBehaviour:
     spread: 20
   homingFlames:
     damage: 8
-    windup: 0.7
-    recovery: 1.3
+    windup: 0.75
+    recovery: 0.9
     cooldown: 10
     range: 16
     speed: 6.5
     projectiles: 3
     spread: 22
   dash:
-    damage: 18
-    windup: 0.65
-    recovery: 1.4
-    cooldown: 9
+    damage: 16
+    windup: 0.7
+    recovery: 0.85
+    cooldown: 8
     range: 8
     speed: 12
     projectiles: 1
@@ -586,8 +586,8 @@ MonoBehaviour:
   doubleSwing:
     damage: 14
     windup: 0.55
-    recovery: 1.15
-    cooldown: 6
+    recovery: 0.8
+    cooldown: 7
     range: 3.8
     speed: 8.5
     projectiles: 1
@@ -595,17 +595,17 @@ MonoBehaviour:
   ringFlames:
     damage: 10
     windup: 1.1
-    recovery: 1.8
-    cooldown: 22
+    recovery: 1.15
+    cooldown: 20
     range: 16
     speed: 6
     projectiles: 10
     spread: 30
   groundSeals:
-    damage: 12
-    windup: 0.9
-    recovery: 1.3
-    cooldown: 16
+    damage: 10
+    windup: 0.85
+    recovery: 0.7
+    cooldown: 13
     range: 1.8
     speed: 0
     projectiles: 3
@@ -616,8 +616,8 @@ MonoBehaviour:
   homingInterval: 0.3
   dashWidth: 2.4
   comboGap: 0.3
-  groundDuration: 1.4
-  groundInterval: 0.45
+  groundDuration: 2.2
+  groundInterval: 0.22
   meleeTwist: 26
   meleeFollowThrough: 48
   meleeStrikeSeconds: 0.1
@@ -631,6 +631,84 @@ MonoBehaviour:
   slamLift: 0.45
   slamDropSeconds: 0.1
   slamPoseRecovery: 0.3
+  sequentialFlames:
+    damage: 9
+    windup: 0.7
+    recovery: 0.8
+    cooldown: 8
+    range: 18
+    speed: 8
+    projectiles: 4
+    spread: 17
+  multiDash:
+    damage: 16
+    windup: 0.7
+    recovery: 1.35
+    cooldown: 13
+    range: 7
+    speed: 10
+    projectiles: 1
+    spread: 17
+  safeZones:
+    damage: 18
+    windup: 1.8
+    recovery: 1.2
+    cooldown: 20
+    range: 14
+    speed: 0
+    projectiles: 2
+    spread: 17
+  orbitVolley:
+    damage: 9
+    windup: 0.8
+    recovery: 1
+    cooldown: 12
+    range: 18
+    speed: 7.5
+    projectiles: 5
+    spread: 150
+  finale:
+    damage: 20
+    windup: 1.8
+    recovery: 1.9
+    cooldown: 26
+    range: 5
+    speed: 6
+    projectiles: 10
+    spread: 40
+  arenaRadius: 14
+  safeRadius: 3
+  safeAreaCount: 2
+  safeFieldMaterial: {fileID: 2100000, guid: 5804ffa502b544344a01bd24fea132f8, type: 2}
+  safetyReactionSeconds: 0.55
+  minimumProjectileDistance: 2.75
+  sequentialInterval: 0.34
+  orbitInterval: 0.32
+  phaseTwoDashCount: 2
+  phaseThreeDashCount: 3
+  multiDashGap: 0.4
+  hazardAreaCount: 4
+  hazardWarningSeconds: 1.1
+  ultimateFloorGap: 0.6
+  ultimateRingWarning: 0.6
+  ultimateRingLife: 1.05
+  ultimateShockWarning: 1.05
+  postUltimateHeavyGrace: 3.5
+  phaseTwoAttackSpeed: 1
+  phaseThreeAttackSpeed: 1.03
+  combos:
+  - first: 9
+    second: 5
+    minimumPhase: 2
+  - first: 8
+    second: 2
+    minimumPhase: 2
+  - first: 3
+    second: 1
+    minimumPhase: 2
+  - first: 8
+    second: 10
+    minimumPhase: 3
 --- !u!114 &6857420299538195328
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -47,6 +47,7 @@ namespace CircusPrototype
                 pitch = Mathf.Clamp(pitch - delta.y * sensitivity, -60, 70);
             }
         }
+        public void ResetStageView(float facing){yaw=facing;pitch=12;introCamera=false;}
         public void SetFirstPerson(bool value) { FirstPerson = value; ApplyPresentation(); }
         void ApplyPresentation()
         {

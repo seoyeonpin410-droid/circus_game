@@ -42,6 +42,7 @@ namespace CircusPrototype
         Vector3 meleeOrigin, meleeForward;
         public bool MeleePending => meleePending;
         public CircusAttackArea MeleeArea => meleeArea;
+        public float MoveSpeed=>moveSpeed;
         public float Health { get; private set; } = 100;
         public int AttackCount { get; private set; }
         public Vector3 AimDirection { get; private set; } = Vector3.forward;
